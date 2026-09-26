@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { authAction, type ActionResult } from "@/app/actions";
+import { AUTH_ACTION_TIMEOUT_MS, withTimeout } from "@/lib/supabase/config";
 import { Field } from "./ui";
-
 function Feedback({ result }: { result: ActionResult }) {
   if (!result.error && !result.success) return null;
   return (
@@ -13,37 +13,55 @@ function Feedback({ result }: { result: ActionResult }) {
     </div>
   );
 }
-
 export function AuthForm({
   mode,
   initialRole = "WORKER",
+  enabled,
+  unavailableMessage,
 }: {
   mode: string;
   initialRole?: string;
+  enabled: boolean;
+  unavailableMessage?: string;
 }) {
   const [result, setResult] = useState<ActionResult>({});
   const [pending, setPending] = useState(false);
   const router = useRouter();
-  const register = mode === "register";
-  const forgot = mode === "forgot-password";
-  const reset = mode === "reset-password";
+  const register = mode === "register",
+    forgot = mode === "forgot-password",
+    reset = mode === "reset-password";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(event.currentTarget));
     setPending(true);
     setResult({});
-    const response = await authAction(mode, payload);
-    setResult(response);
-    if (response.id === "signed-in") {
-      router.push(register ? "/dashboard/profile" : "/dashboard");
-      router.refresh();
+    try {
+      const response = await withTimeout(
+        authAction(mode, payload),
+        AUTH_ACTION_TIMEOUT_MS,
+        "Authentication took too long. The configured Supabase service may be unavailable. Check the service and try again.",
+      );
+      setResult(response);
+      if (response.id === "signed-in") {
+        router.push(register ? "/dashboard/profile" : "/dashboard");
+        router.refresh();
+      }
+    } catch (error) {
+      setResult({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Authentication failed. Please try again.",
+      });
+    } finally {
+      setPending(false);
     }
-    setPending(false);
   }
 
   return (
     <form onSubmit={submit}>
+      {!enabled && <div className="notice">{unavailableMessage}</div>}
       {register && (
         <>
           <Field label="I’m joining as">
@@ -84,7 +102,11 @@ export function AuthForm({
           />
         </Field>
       )}
-      <button className="button" disabled={pending} aria-busy={pending}>
+      <button
+        className="button"
+        disabled={pending || !enabled}
+        aria-busy={pending}
+      >
         {pending
           ? "Please wait…"
           : register
@@ -105,3 +127,4 @@ export function AuthForm({
     </form>
   );
 }
+
