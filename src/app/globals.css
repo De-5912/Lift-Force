@@ -230,6 +230,136 @@ button {
   color: var(--green);
   margin-bottom: 16px;
 }
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 70px;
+  padding-top: 62px;
+  padding-bottom: 56px;
+}
+.hero h1 {
+  font-size: clamp(2.6rem, 4.4vw, 4rem);
+  max-width: 630px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: #46715d;
+}
+.hero p {
+  max-width: 515px;
+  font-size: 1.05rem;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.hero .actions {
+  margin: 27px 0;
+}
+.hero-note {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.hero-board {
+  border-radius: 10px;
+  background: var(--green);
+  color: white;
+  padding: 27px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-board p,
+.hero-board small {
+  color: #baccc1;
+}
+.board-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #ffffff26;
+  padding-bottom: 17px;
+  margin-bottom: 22px;
+}
+.hero-board h2 {
+  max-width: 340px;
+  font-size: 1.65rem;
+}
+.board-lines {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 25px 0;
+}
+.board-line {
+  background: #ffffff0b;
+  border: 1px solid #ffffff25;
+  padding: 15px 12px;
+  border-radius: 4px;
+}
+.board-line strong {
+  display: block;
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--lime);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.board-line span {
+  font-size: 0.8rem;
+}
+.board-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.84rem;
+  border-top: 1px solid #ffffff26;
+  padding-top: 18px;
+}
+.board-bottom a {
+  color: var(--lime);
+}
+.industry-strip {
+  background: #e9eee6;
+  padding: 18px 40px;
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+  font-size: 0.82rem;
+  color: #5b6b60;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.industry-strip strong {
+  color: var(--ink);
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+.section-heading h2 {
+  margin-bottom: 6px;
+}
+.section-heading p {
+  margin-bottom: 0;
+}
+.section-heading a {
+  font-size: 0.9rem;
+  color: var(--green);
+  font-weight: 600;
+}
 .job-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

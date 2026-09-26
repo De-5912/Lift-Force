@@ -2,8 +2,8 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { db, configured } from "./supabase/server";
-import { profiles, categories, roles, skills } from "./demo";
-import type { AccountRole, Profile, Taxon } from "./domain";
+import { demoJobs, profiles, categories, roles, skills } from "./demo";
+import type { AccountRole, Job, Profile, Taxon } from "./domain";
 export const currentUser = cache(async () => {
   if (!configured()) return null;
   const client = await db();
@@ -27,6 +27,34 @@ export async function requireUser(role?: AccountRole) {
   if (!user) redirect("/sign-in");
   if (role && user.role !== role) redirect("/dashboard");
   return user;
+}
+const jobSelect =
+  "*,profiles!jobs_owner_id_fkey(*),categories(*),job_roles(*,worker_roles(*)),job_skills(skills(*))";
+export async function getJobs(owned = false): Promise<Job[]> {
+  if (!configured()) return owned ? [] : demoJobs;
+  const client = await db();
+  let query = client.from("jobs").select(jobSelect);
+  if (owned) {
+    const user = await requireUser();
+    query = query.eq("owner_id", user.id);
+  } else
+    query = query
+      .eq("status", "OPEN")
+      .gte("deadline", new Date().toISOString().slice(0, 10));
+  const { data, error } = await query.order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data as unknown as Job[];
+}
+export async function getJob(id: string): Promise<Job | null> {
+  if (!configured()) return demoJobs.find((j) => j.id === id) ?? null;
+  const client = await db();
+  const { data, error } = await client
+    .from("jobs")
+    .select(jobSelect)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as unknown as Job | null;
 }
 export async function getProfiles(kind?: string): Promise<Profile[]> {
   if (!configured()) return profiles.filter((p) => !kind || p.kind === kind);
@@ -69,3 +97,4 @@ export async function getTaxonomy(): Promise<{
     skills: results[2].data!,
   };
 }
+
