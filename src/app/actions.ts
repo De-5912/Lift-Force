@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/supabase/server";
 import { authErrorMessage } from "@/lib/supabase/config";
 import { currentUser } from "@/lib/data";
-import { jobSchema } from "@/lib/domain";
+import { jobSchema, submissionSchema } from "@/lib/domain";
 export type ActionResult = { error?: string; success?: string; id?: string };
 const profileSchema = z.object({
   roles: z.array(z.uuid()).max(30).default([]),
@@ -49,6 +49,7 @@ const commands: Record<string, z.ZodType> = {
   remove_history: z.object({ id: z.uuid() }),
   profile: profileSchema,
   create_job: jobSchema,
+  submit: submissionSchema,
   job_status: z.object({
     id: z.uuid(),
     status: z.enum([
@@ -60,6 +61,24 @@ const commands: Record<string, z.ZodType> = {
       "COMPLETED",
     ]),
   }),
+  submission_status: z.object({
+    id: z.uuid(),
+    kind: z.enum(["application", "proposal"]),
+    status: z.enum([
+      "UNDER_REVIEW",
+      "SHORTLISTED",
+      "INTERVIEW_REQUESTED",
+      "NEGOTIATION",
+      "SELECTED",
+      "ACCEPTED",
+      "REJECTED",
+      "WITHDRAWN",
+    ]),
+  }),
+  deployment: z.object({
+    id: z.uuid(),
+    status: z.enum(["CONFIRMED", "COMPLETED"]),
+  }),
   save: z.object({ id: z.uuid(), remove: z.boolean().optional() }),
   verification: z.object({ notes: shortText }),
   report: z.object({
@@ -67,6 +86,11 @@ const commands: Record<string, z.ZodType> = {
     profile_id: z.union([z.uuid(), z.literal("")]).optional(),
     reason: shortText,
     details: z.string().trim().min(10).max(5000),
+  }),
+  review: z.object({
+    id: z.uuid(),
+    rating: z.coerce.number().int().min(1).max(5),
+    body: z.string().trim().min(5).max(3000),
   }),
 };
 export async function command(
