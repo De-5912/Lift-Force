@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ArrowUpRight, Building2, MoveVertical } from "lucide-react";
+import { ArrowUpRight, Building2, Menu, MoveVertical } from "lucide-react";
 import { currentUser } from "@/lib/data";
 import { configured } from "@/lib/supabase/server";
 import { logout } from "@/app/actions";
-
 export async function Header() {
   const user = await currentUser();
   return (
@@ -44,6 +43,20 @@ export async function Header() {
               </Link>
             </>
           )}
+          <details className="mobile-menu">
+            <summary aria-label="Open navigation">
+              <Menu />
+            </summary>
+            <nav>
+              <Link href="/requirements">Find work</Link>
+              <Link href="/workers">Find workers</Link>
+              <Link href="/vendors">Manpower vendors</Link>
+              <Link href="/how-it-works">How it works</Link>
+              <Link href={user ? "/dashboard" : "/sign-in"}>
+                {user ? "Dashboard" : "Sign in"}
+              </Link>
+            </nav>
+          </details>
         </div>
       </header>
       {!configured() && (
@@ -55,7 +68,6 @@ export async function Header() {
     </>
   );
 }
-
 export function Footer() {
   return (
     <footer className="footer">

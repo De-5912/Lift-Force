@@ -21,7 +21,6 @@ export const currentUser = cache(async () => {
     throw new Error("This account is suspended. Contact platform support.");
   return { id: user.id, email: user.email, role: data.role as AccountRole };
 });
-
 export async function requireUser(role?: AccountRole) {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
@@ -97,8 +96,6 @@ export async function getTaxonomy(): Promise<{
     skills: results[2].data!,
   };
 }
-
-
 export async function getSubmissions(): Promise<Submission[]> {
   const client = await db();
   const [a, p] = await Promise.all([

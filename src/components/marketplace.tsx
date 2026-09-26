@@ -11,6 +11,7 @@ export function Marketplace({
   jobs: Job[];
   profile?: Profile;
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [q, setQ] = useState(""),
     [city, setCity] = useState(""),
     [state, setState] = useState(""),
@@ -84,10 +85,18 @@ export function Marketplace({
           />
         </div>
       </div>
+      <button
+        className="button secondary mobile-filter-toggle"
+        aria-expanded={filtersOpen}
+        aria-controls="requirement-filters"
+        onClick={() => setFiltersOpen(!filtersOpen)}
+      >
+        {filtersOpen ? "Hide filters" : "Filter requirements"}
+      </button>
       <div className="market-layout">
         <aside
           id="requirement-filters"
-          className="filter-panel"
+          className={`filter-panel ${filtersOpen ? "filters-open" : ""}`}
         >
           <h2>Filter requirements</h2>
           <div className="filter-fields">
@@ -285,4 +294,3 @@ export function Marketplace({
     </>
   );
 }
-
