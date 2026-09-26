@@ -163,3 +163,76 @@ export async function logout() {
   revalidatePath("/", "layout");
   redirect("/");
 }
+export async function upload(form: FormData): Promise<ActionResult> {
+  try {
+    const user = await currentUser();
+    if (!user) return { error: "Sign in to upload documents." };
+    const file = form.get("file");
+    if (!(file instanceof File) || !file.size || file.size > 5242880)
+      return { error: "Choose a PDF, JPEG or PNG up to 5 MB." };
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const pdf = String.fromCharCode(...bytes.slice(0, 5)) === "%PDF-";
+    const png =
+      bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71;
+    const jpg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+    const mime = pdf
+      ? "application/pdf"
+      : png
+        ? "image/png"
+        : jpg
+          ? "image/jpeg"
+          : null;
+    if (!mime || mime !== file.type)
+      return { error: "File content must match a PDF, JPEG or PNG." };
+    const client = await db();
+    const path = `${user.id}/${crypto.randomUUID()}.${pdf ? "pdf" : png ? "png" : "jpg"}`;
+    const { error } = await client.storage
+      .from("documents")
+      .upload(path, bytes, { contentType: mime, upsert: false });
+    if (error) return { error: error.message };
+    const jobId = form.get("job_id");
+    const { error: recordError } = await client.rpc("run_command", {
+      command: {
+        op: "attachment",
+        object_path: path,
+        name: file.name,
+        mime_type: mime,
+        size_bytes: file.size,
+        job_id: typeof jobId === "string" ? jobId : "",
+      },
+    });
+    if (recordError) return { error: recordError.message };
+    revalidatePath("/dashboard/profile");
+    return { success: "Document uploaded privately." };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Upload failed." };
+  }
+}
+export async function uploadPhoto(form: FormData): Promise<ActionResult> {
+  try {
+    const user = await currentUser();
+    if (!user) return { error: "Sign in to upload a photo." };
+    const file = form.get("file");
+    if (!(file instanceof File) || !file.size || file.size > 2097152)
+      return { error: "Choose a JPEG or PNG up to 2 MB." };
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const png =
+      bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71;
+    const jpg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+    if (!png && !jpg) return { error: "Choose a valid PNG or JPEG image." };
+    const client = await db(),
+      path = `${user.id}/${crypto.randomUUID()}.${png ? "png" : "jpg"}`;
+    const { error } = await client.storage
+      .from("profile-media")
+      .upload(path, bytes, { contentType: png ? "image/png" : "image/jpeg" });
+    if (error) return { error: error.message };
+    const { error: recordError } = await client.rpc("run_command", {
+      command: { op: "photo", path },
+    });
+    if (recordError) return { error: recordError.message };
+    revalidatePath("/", "layout");
+    return { success: "Public profile image updated." };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Photo upload failed." };
+  }
+}
