@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/supabase/server";
 import { authErrorMessage } from "@/lib/supabase/config";
 import { currentUser } from "@/lib/data";
+import { jobSchema } from "@/lib/domain";
 export type ActionResult = { error?: string; success?: string; id?: string };
 const profileSchema = z.object({
   roles: z.array(z.uuid()).max(30).default([]),
@@ -47,6 +48,7 @@ const commands: Record<string, z.ZodType> = {
   }),
   remove_history: z.object({ id: z.uuid() }),
   profile: profileSchema,
+  create_job: jobSchema,
   verification: z.object({ notes: shortText }),
   report: z.object({
     job_id: z.union([z.uuid(), z.literal("")]).optional(),
