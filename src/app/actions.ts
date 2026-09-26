@@ -75,6 +75,10 @@ const commands: Record<string, z.ZodType> = {
       "WITHDRAWN",
     ]),
   }),
+  deployment: z.object({
+    id: z.uuid(),
+    status: z.enum(["CONFIRMED", "COMPLETED"]),
+  }),
   save: z.object({ id: z.uuid(), remove: z.boolean().optional() }),
   verification: z.object({ notes: shortText }),
   report: z.object({
@@ -82,6 +86,11 @@ const commands: Record<string, z.ZodType> = {
     profile_id: z.union([z.uuid(), z.literal("")]).optional(),
     reason: shortText,
     details: z.string().trim().min(10).max(5000),
+  }),
+  review: z.object({
+    id: z.uuid(),
+    rating: z.coerce.number().int().min(1).max(5),
+    body: z.string().trim().min(5).max(3000),
   }),
 };
 export async function command(
