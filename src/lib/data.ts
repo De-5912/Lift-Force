@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { db, configured } from "./supabase/server";
 import { demoJobs, profiles, categories, roles, skills } from "./demo";
-import type { AccountRole, Job, Profile, Taxon } from "./domain";
+import type { AccountRole, Job, Profile, Submission, Taxon } from "./domain";
 export const currentUser = cache(async () => {
   if (!configured()) return null;
   const client = await db();
@@ -98,3 +98,24 @@ export async function getTaxonomy(): Promise<{
   };
 }
 
+
+export async function getSubmissions(): Promise<Submission[]> {
+  const client = await db();
+  const [a, p] = await Promise.all([
+    client
+      .from("applications")
+      .select(
+        "*,profiles!applications_applicant_id_fkey(*),jobs(id,title,owner_id)",
+      ),
+    client
+      .from("proposals")
+      .select(
+        "*,profiles!proposals_applicant_id_fkey(*),jobs(id,title,owner_id),proposal_items(*,job_roles(worker_roles(*)))",
+      ),
+  ]);
+  if (a.error || p.error) throw new Error((a.error || p.error)!.message);
+  return [
+    ...a.data.map((s) => ({ ...s, kind: "application" as const })),
+    ...p.data.map((s) => ({ ...s, kind: "proposal" as const })),
+  ] as unknown as Submission[];
+}

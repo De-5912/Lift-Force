@@ -61,6 +61,20 @@ const commands: Record<string, z.ZodType> = {
       "COMPLETED",
     ]),
   }),
+  submission_status: z.object({
+    id: z.uuid(),
+    kind: z.enum(["application", "proposal"]),
+    status: z.enum([
+      "UNDER_REVIEW",
+      "SHORTLISTED",
+      "INTERVIEW_REQUESTED",
+      "NEGOTIATION",
+      "SELECTED",
+      "ACCEPTED",
+      "REJECTED",
+      "WITHDRAWN",
+    ]),
+  }),
   save: z.object({ id: z.uuid(), remove: z.boolean().optional() }),
   verification: z.object({ notes: shortText }),
   report: z.object({

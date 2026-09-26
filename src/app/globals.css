@@ -824,6 +824,43 @@ tbody tr:last-child td {
   color: #65815e;
   border-radius: 9px;
 }
+.submission-card {
+  background: white;
+  border: 1px solid var(--line);
+  padding: 25px;
+  border-radius: 7px;
+  margin-bottom: 18px;
+}
+.submission-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.submission-facts {
+  display: flex;
+  gap: 25px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  margin: 18px 0;
+  color: var(--muted);
+}
+.submission-card details {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 15px;
+}
+.submission-card summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.submission-card .actions {
+  margin-top: 18px;
+}
+.submission-card .button {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+}
 .notice {
   background: #eef2e8;
   border-left: 3px solid #8aa371;
