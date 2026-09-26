@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArrowUpRight, Building2, MoveVertical } from "lucide-react";
+import { currentUser } from "@/lib/data";
+import { configured } from "@/lib/supabase/server";
+import { logout } from "@/app/actions";
 
-export function Header() {
+export async function Header() {
+  const user = await currentUser();
   return (
     <>
       <a className="skip" href="#main">
@@ -21,14 +25,33 @@ export function Header() {
           <Link href="/how-it-works">How it works</Link>
         </nav>
         <div className="header-actions">
-          <Link className="signin-link" href="/sign-in">
-            Sign in
-          </Link>
-          <Link className="button small" href="/register?role=COMPANY">
-            Post a requirement <ArrowUpRight size={16} />
-          </Link>
+          {user ? (
+            <>
+              <Link href="/dashboard" className="button secondary">
+                Dashboard
+              </Link>
+              <form action={logout}>
+                <button className="text-button">Sign out</button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link className="signin-link" href="/sign-in">
+                Sign in
+              </Link>
+              <Link className="button small" href="/register?role=COMPANY">
+                Post a requirement <ArrowUpRight size={16} />
+              </Link>
+            </>
+          )}
         </div>
       </header>
+      {!configured() && (
+        <div className="demo-bar">
+          <span>LOCAL PREVIEW</span> Sample profiles and requirements · Connect
+          local Supabase to enable accounts and saved changes.
+        </div>
+      )}
     </>
   );
 }
