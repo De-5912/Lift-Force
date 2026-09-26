@@ -92,6 +92,19 @@ const commands: Record<string, z.ZodType> = {
     rating: z.coerce.number().int().min(1).max(5),
     body: z.string().trim().min(5).max(3000),
   }),
+  moderate: z.object({
+    id: z.uuid(),
+    action: z.enum(["verify", "suspend", "close_job", "resolve"]),
+    approve: z.boolean().optional(),
+    suspended: z.boolean().optional(),
+    notes: z.string().max(1000).optional(),
+  }),
+  taxonomy: z.object({
+    table: z.enum(["categories", "worker_roles", "skills"]),
+    id: z.union([z.uuid(), z.literal("")]),
+    industry_id: z.uuid(),
+    name: z.string().trim().min(2).max(100),
+  }),
 };
 export async function command(
   op: string,

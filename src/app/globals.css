@@ -711,6 +711,69 @@ tbody tr:last-child td {
   background: #54805e;
   height: 100%;
 }
+.dashboard {
+  display: grid;
+  grid-template-columns: 215px minmax(0, 1fr);
+  min-height: 70vh;
+}
+.sidebar {
+  border-right: 1px solid var(--line);
+  background: #edf1eb;
+  padding: 30px 18px;
+}
+.sidebar small {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 1.2px;
+  margin: 0 12px 20px;
+}
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+  padding: 11px 13px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  color: #526154;
+}
+.sidebar a:hover,
+.sidebar a.active {
+  background: #dfe8da;
+  color: var(--green);
+  font-weight: 600;
+}
+.dashboard-main {
+  padding: 40px;
+  min-width: 0;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
+}
+.stat {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 22px;
+}
+.stat > span {
+  font-size: 0.81rem;
+  color: var(--muted);
+  display: block;
+}
+.stat strong {
+  font-size: 2.25rem;
+  font-weight: 600;
+  display: block;
+  letter-spacing: -1px;
+  margin: 4px 0;
+}
+.stat small {
+  font-size: 0.74rem;
+}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
