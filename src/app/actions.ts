@@ -81,6 +81,7 @@ const commands: Record<string, z.ZodType> = {
   }),
   message: z.object({ conversation_id: z.uuid(), body: shortText }),
   read_conversation: z.object({ id: z.uuid() }),
+  read_notifications: z.object({}),
   save: z.object({ id: z.uuid(), remove: z.boolean().optional() }),
   verification: z.object({ notes: shortText }),
   report: z.object({
