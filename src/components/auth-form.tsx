@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation";
 import { authAction, type ActionResult } from "@/app/actions";
 import { AUTH_ACTION_TIMEOUT_MS, withTimeout } from "@/lib/supabase/config";
 import { Field } from "./ui";
-function Feedback({ result }: { result: ActionResult }) {
-  if (!result.error && !result.success) return null;
-  return (
-    <div className={`feedback ${result.error ? "error" : ""}`} role="status">
-      {result.error ?? result.success}
-    </div>
-  );
-}
+import { Feedback } from "./action-form";
 export function AuthForm({
   mode,
   initialRole = "WORKER",
@@ -127,4 +120,3 @@ export function AuthForm({
     </form>
   );
 }
-

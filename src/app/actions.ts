@@ -4,7 +4,88 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/supabase/server";
 import { authErrorMessage } from "@/lib/supabase/config";
+import { currentUser } from "@/lib/data";
 export type ActionResult = { error?: string; success?: string; id?: string };
+const profileSchema = z.object({
+  roles: z.array(z.uuid()).max(30).default([]),
+  preferred_locations: z.string().max(500).default(""),
+  elevator_types: z.string().max(500).default(""),
+  year_established: z.coerce.number().int().min(0).max(2100).default(0),
+  company_size: z.string().max(100).default(""),
+  contact_person: z.string().max(180).default(""),
+  name: z.string().trim().min(2).max(180),
+  city: z.string().trim().min(2).max(100),
+  state: z.string().trim().min(2).max(100),
+  bio: z.string().trim().min(10).max(5000),
+  experience: z.coerce.number().int().min(0).max(60),
+  primary_role: z.string().max(100),
+  availability: z.string().max(100),
+  expected_rate: z.coerce.number().min(0),
+  website: z.string().max(300),
+  languages: z.string().max(300),
+  brands: z.string().max(500),
+  travel: z.boolean(),
+  team_size: z.coerce.number().int().min(0).max(10000),
+  skills: z.array(z.uuid()).max(30),
+  phone: z.string().max(30),
+  gst_number: z.string().max(20),
+});
+const shortText = z.string().trim().min(1).max(5000);
+const commands: Record<string, z.ZodType> = {
+  history: z.object({
+    kind: z.enum([
+      "EMPLOYMENT",
+      "PROJECT",
+      "CERTIFICATION",
+      "TRAINING",
+      "EDUCATION",
+    ]),
+    title: z.string().trim().min(2).max(180),
+    organization: z.string().max(180),
+    description: z.string().max(3000),
+    year: z.coerce.number().int().min(1950).max(2100),
+  }),
+  remove_history: z.object({ id: z.uuid() }),
+  profile: profileSchema,
+  verification: z.object({ notes: shortText }),
+  report: z.object({
+    job_id: z.union([z.uuid(), z.literal("")]).optional(),
+    profile_id: z.union([z.uuid(), z.literal("")]).optional(),
+    reason: shortText,
+    details: z.string().trim().min(10).max(5000),
+  }),
+};
+export async function command(
+  op: string,
+  payload: unknown,
+): Promise<ActionResult> {
+  try {
+    if (!commands[op]) throw new Error("Unknown action.");
+    const parsed = commands[op].safeParse(payload);
+    if (!parsed.success)
+      return { error: parsed.error.issues.map((i) => i.message).join(" ") };
+    const user = await currentUser();
+    if (!user) return { error: "Sign in to continue." };
+    const client = await db();
+    const { data, error } = await client.rpc("run_command", {
+      command: { op, ...(parsed.data as object) },
+    });
+    if (error)
+      return {
+        error:
+          error.code === "23505"
+            ? "This record already exists. Duplicate submissions and reviews are not allowed."
+            : error.message,
+      };
+    revalidatePath("/", "layout");
+    return { success: "Changes saved.", id: data?.id ?? undefined };
+  } catch (e) {
+    return {
+      error:
+        e instanceof Error ? e.message : "Unable to save. Please try again.",
+    };
+  }
+}
 export async function authAction(
   mode: string,
   payload: unknown,
