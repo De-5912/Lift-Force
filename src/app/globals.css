@@ -1,3 +1,16 @@
+@import "tailwindcss";
+.mobile-filter-toggle {
+  display: none;
+}
+@media (max-width: 600px) {
+  .mobile-filter-toggle {
+    display: inline-flex;
+    margin-bottom: 20px;
+  }
+  .filter-panel:not(.filters-open) {
+    display: none;
+  }
+}
 :root {
   --ink: #172c28;
   --muted: #64726d;
@@ -1060,5 +1073,359 @@ tbody tr:last-child td {
 @keyframes pulse {
   50% {
     opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (min-width: 1450px) {
+  .header,
+  .footer {
+    padding-left: calc((100vw - 1280px) / 2 + 40px);
+    padding-right: calc((100vw - 1280px) / 2 + 40px);
+  }
+}
+@media (max-width: 1100px) {
+  .desktop-nav {
+    gap: 15px;
+    font-size: 0.82rem;
+  }
+  .header {
+    padding: 0 24px;
+  }
+  .header-actions {
+    gap: 14px;
+  }
+  .hero {
+    gap: 35px;
+  }
+  .dashboard-main {
+    padding: 30px 24px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .job-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .job-grid > .job-card:last-child:nth-child(3) {
+    display: none;
+  }
+  .market-layout .job-grid > .job-card {
+    display: block;
+  }
+  .detail-layout {
+    grid-template-columns: minmax(0, 1fr) 290px;
+  }
+  .container {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+@media (max-width: 850px) {
+  .desktop-nav {
+    display: none;
+  }
+  .mobile-menu {
+    display: block;
+  }
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .hero h1 {
+    max-width: 640px;
+  }
+  .hero-board {
+    max-width: 620px;
+  }
+  .hero-board h2 {
+    max-width: none;
+  }
+  .market-layout {
+    grid-template-columns: 190px minmax(0, 1fr);
+    gap: 18px;
+  }
+  .market-layout .job-grid {
+    grid-template-columns: 1fr;
+  }
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+  .detail-aside {
+    position: static;
+  }
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    padding: 13px 20px;
+    display: flex;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    gap: 7px;
+  }
+  .sidebar small {
+    display: none;
+  }
+  .sidebar a {
+    white-space: nowrap;
+    margin: 0;
+  }
+  .message-layout {
+    grid-template-columns: 1fr;
+  }
+  .conversation-list {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+  }
+  .conversation-link {
+    min-width: 220px;
+  }
+  .steps {
+    grid-template-columns: 1fr;
+  }
+  .footer {
+    padding: 28px;
+  }
+  .footer nav {
+    flex-wrap: wrap;
+  }
+  .detail-head h1 {
+    font-size: 2rem;
+  }
+}
+@media (max-width: 600px) {
+  .container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .header {
+    height: 75px;
+    padding: 0 18px;
+    gap: 12px;
+  }
+  .brand {
+    font-size: 1.5rem;
+  }
+  .brand-mark {
+    padding: 6px;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .header-actions > .button.small {
+    font-size: 0.72rem;
+    padding: 8px 10px;
+    max-width: 115px;
+    line-height: 1.3;
+  }
+  .header-actions > .button.small svg {
+    display: none;
+  }
+  .signin-link {
+    display: none;
+  }
+  .header-actions form {
+    display: none;
+  }
+  .demo-bar {
+    padding: 8px 18px;
+    font-size: 0.7rem;
+    text-align: left;
+  }
+  .demo-bar span {
+    display: block;
+  }
+  .hero {
+    padding-top: 36px;
+    padding-bottom: 32px;
+  }
+  .hero h1 {
+    font-size: 2.7rem;
+    letter-spacing: -1.6px;
+  }
+  .hero p {
+    font-size: 1rem;
+  }
+  .hero-board {
+    padding: 22px;
+  }
+  .hero-board h2 {
+    font-size: 1.4rem;
+  }
+  .board-lines {
+    gap: 7px;
+  }
+  .board-line {
+    padding: 11px 9px;
+  }
+  .board-line strong {
+    font-size: 1.6rem;
+  }
+  .board-line span {
+    font-size: 0.73rem;
+  }
+  .industry-strip {
+    gap: 12px 20px;
+    padding: 16px 20px;
+    justify-content: flex-start;
+    font-size: 0.75rem;
+  }
+  .section {
+    padding-top: 32px;
+    padding-bottom: 35px;
+  }
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .section-heading h2 {
+    font-size: 1.4rem;
+  }
+  .section-heading p {
+    font-size: 0.9rem;
+  }
+  .job-grid {
+    grid-template-columns: 1fr;
+  }
+  .job-grid > .job-card:last-child:nth-child(3) {
+    display: block;
+  }
+  .job-card {
+    padding: 21px;
+  }
+  .cta-grid {
+    grid-template-columns: 1fr;
+  }
+  .cta {
+    padding: 25px;
+  }
+  .page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .page-heading h1 {
+    font-size: 1.9rem;
+  }
+  .page-heading p {
+    font-size: 0.9rem;
+  }
+  .market-layout {
+    grid-template-columns: 1fr;
+  }
+  .filter-panel {
+    padding: 18px;
+  }
+  .filter-panel .filter-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 14px;
+  }
+  .filter-panel h2 {
+    margin-bottom: 14px;
+  }
+  .filter-panel .field {
+    margin-bottom: 13px;
+  }
+  .search-bar {
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    min-width: 180px;
+  }
+  .results-toolbar {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+  .results-toolbar select {
+    max-width: 165px;
+  }
+  .panel {
+    padding: 21px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .role-line {
+    grid-template-columns: 1fr 1fr;
+  }
+  .role-line > .field:first-child {
+    grid-column: 1/-1;
+  }
+  .role-line button {
+    margin: 0;
+    min-height: 44px;
+  }
+  .dashboard-main {
+    padding: 27px 18px;
+  }
+  .stats {
+    gap: 12px;
+  }
+  .stat {
+    padding: 17px;
+  }
+  .stat strong {
+    font-size: 1.9rem;
+  }
+  .stat > span {
+    font-size: 0.75rem;
+  }
+  .detail-meta {
+    gap: 12px 18px;
+  }
+  .detail-head h1 {
+    font-size: 1.9rem;
+  }
+  .definition-grid {
+    gap: 15px;
+  }
+  .definition-grid dd {
+    font-size: 0.88rem;
+  }
+  .submission-top {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .submission-facts {
+    gap: 10px 20px;
+  }
+  .submission-card {
+    padding: 20px;
+  }
+  .auth-wrap {
+    margin: 35px auto;
+  }
+  .auth-wrap .panel {
+    padding: 25px;
+  }
+  .footer {
+    padding: 28px 20px;
+    gap: 22px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .footer nav {
+    gap: 13px 22px;
+  }
+  .auth-links {
+    font-size: 0.8rem;
+  }
+  .message {
+    max-width: 95%;
+  }
+  .empty {
+    padding: 42px 20px;
+  }
+  h1 {
+    overflow-wrap: anywhere;
   }
 }
