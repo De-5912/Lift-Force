@@ -924,6 +924,49 @@ tbody tr:last-child td {
   font-size: 0.8rem;
   padding: 8px 12px;
 }
+.message-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 22px;
+}
+.conversation-link {
+  padding: 18px;
+  background: white;
+  border: 1px solid var(--line);
+  display: block;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+}
+.conversation-link strong {
+  display: block;
+  margin-bottom: 7px;
+}
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 480px;
+  overflow: auto;
+  padding: 5px 0 20px;
+}
+.message {
+  align-self: flex-start;
+  background: #eff2ec;
+  padding: 14px 18px;
+  border-radius: 7px;
+  max-width: 85%;
+  overflow-wrap: anywhere;
+}
+.message.mine {
+  align-self: flex-end;
+  background: #e1eddc;
+}
+.message p {
+  color: var(--ink);
+  margin: 0 0 7px;
+  white-space: pre-wrap;
+}
 .notice {
   background: #eef2e8;
   border-left: 3px solid #8aa371;
