@@ -230,6 +230,52 @@ button {
   color: var(--green);
   margin-bottom: 16px;
 }
+.feedback {
+  padding: 12px 16px;
+  border: 1px solid #aac6ab;
+  background: #edf6ea;
+  color: #315b35;
+  border-radius: 4px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+.feedback.error {
+  background: #fff0ed;
+  color: #9a392a;
+  border-color: #e6b5ac;
+}
+.auth-wrap {
+  max-width: 510px;
+  margin: 55px auto;
+  padding: 0 20px;
+}
+.auth-wrap .panel {
+  padding: 32px;
+}
+.auth-wrap h1 {
+  font-size: 2rem;
+}
+.auth-wrap .button {
+  width: 100%;
+}
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 0.85rem;
+  margin-top: 20px;
+}
+.auth-links a {
+  text-decoration: underline;
+}
+.notice {
+  background: #eef2e8;
+  border-left: 3px solid #8aa371;
+  padding: 14px 18px;
+  font-size: 0.87rem;
+  color: #53674e;
+  margin-bottom: 22px;
+}
 .prose {
   max-width: 850px;
   margin: 0 auto;
