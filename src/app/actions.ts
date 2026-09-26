@@ -49,6 +49,18 @@ const commands: Record<string, z.ZodType> = {
   remove_history: z.object({ id: z.uuid() }),
   profile: profileSchema,
   create_job: jobSchema,
+  job_status: z.object({
+    id: z.uuid(),
+    status: z.enum([
+      "OPEN",
+      "PAUSED",
+      "CLOSED",
+      "CANCELLED",
+      "EXPIRED",
+      "COMPLETED",
+    ]),
+  }),
+  save: z.object({ id: z.uuid(), remove: z.boolean().optional() }),
   verification: z.object({ notes: shortText }),
   report: z.object({
     job_id: z.union([z.uuid(), z.literal("")]).optional(),
