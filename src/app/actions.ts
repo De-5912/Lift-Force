@@ -79,6 +79,8 @@ const commands: Record<string, z.ZodType> = {
     id: z.uuid(),
     status: z.enum(["CONFIRMED", "COMPLETED"]),
   }),
+  message: z.object({ conversation_id: z.uuid(), body: shortText }),
+  read_conversation: z.object({ id: z.uuid() }),
   save: z.object({ id: z.uuid(), remove: z.boolean().optional() }),
   verification: z.object({ notes: shortText }),
   report: z.object({
