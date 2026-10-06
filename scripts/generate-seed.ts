@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { profiles, demoJobs, id } from "../src/lib/demo";
+import { profiles, demoJobs, demoManpowerListings, id } from "../src/lib/demo";
 const sql = (s: unknown): string =>
   s === null
     ? "null"
@@ -75,6 +75,29 @@ for (const j of demoJobs) {
       `insert into public.job_skills values(${sql(j.id)},${sql(s.skills.id)});`,
     );
 }
+for (const listing of demoManpowerListings) {
+  const { profiles: _profile, items, categories, skills, ...data } = listing;
+  void _profile;
+  const keys = Object.keys(data);
+  rows.push(
+    `insert into public.vendor_manpower_listings(${keys.join(",")}) values(${Object.values(data).map(sql).join(",")});`,
+  );
+  for (const { worker_roles: _role, ...item } of items) {
+    void _role;
+    const itemData = { ...item, listing_id: listing.id };
+    rows.push(
+      `insert into public.vendor_manpower_listing_items(${Object.keys(itemData).join(",")}) values(${Object.values(itemData).map(sql).join(",")});`,
+    );
+  }
+  for (const category of categories)
+    rows.push(
+      `insert into public.vendor_manpower_listing_categories values(${sql(listing.id)},${sql(category.id)});`,
+    );
+  for (const skill of skills)
+    rows.push(
+      `insert into public.vendor_manpower_listing_skills values(${sql(listing.id)},${sql(skill.id)});`,
+    );
+}
 rows.push(
   `update public.jobs j set organization_id=o.id from public.organizations o where o.owner_id=j.owner_id;`,
 );
@@ -109,5 +132,5 @@ rows.push(
 );
 writeFileSync("supabase/seed.sql", rows.join("\n") + "\n");
 console.log(
-  "Local seed generated: six requirements, six profiles and one administrator.",
+  "Local seed generated: six requirements, five manpower listings, six profiles and one administrator.",
 );
