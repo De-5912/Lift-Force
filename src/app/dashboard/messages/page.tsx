@@ -41,12 +41,12 @@ export default async function Messages({
     <>
       <PageTitle
         title="Project messages"
-        description="Conversations are available only after an application or proposal has been submitted."
+        description="Conversations are available after an application, proposal or vendor invitation."
       />
       {!selected ? (
         <Empty
           title="No conversations"
-          body="Apply to a requirement or receive an applicant to start a project conversation."
+          body="Apply, invite a vendor or receive a submission to start a project conversation."
         />
       ) : (
         <div className="message-layout">
