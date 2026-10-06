@@ -16,10 +16,16 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
     await pg.exec(
       `create role anon; create role authenticated; create schema auth; create schema storage; create table auth.users(id uuid primary key,raw_user_meta_data jsonb); create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]); create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text); alter table storage.objects enable row level security; create function storage.foldername(text) returns text[] language sql as $$ select string_to_array($1,'/') $$;`,
     );
-    const file = readdirSync("supabase/migrations").find((f) =>
-      f.endsWith("_workforce_core.sql"),
-    )!;
-    await pg.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
+    const migrations = readdirSync("supabase/migrations")
+      .filter(
+        (file) =>
+          file.endsWith("_workforce_core.sql") ||
+          file.endsWith("_available_manpower_marketplace.sql") ||
+          file.endsWith("_manpower_invitation_listing_index.sql"),
+      )
+      .sort();
+    for (const file of migrations)
+      await pg.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
     await pg.exec('grant usage on schema storage to authenticated;grant select on storage.objects to authenticated;');
     await pg.query("insert into public.industries(id,name) values($1,$2)", [
       id(50),
@@ -94,6 +100,45 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
     ).rows;
     const technician = lines.find((l) => l.role_id === id(202))!.id,
       helper = lines.find((l) => l.role_id === id(213))!.id;
+    const manpowerPayload = {
+      op: "manpower_listing",
+      title: "Installation team available in Bengaluru",
+      description:
+        "Installation technicians, helpers and a site supervisor are available for elevator projects.",
+      city: "Bengaluru",
+      state: "Karnataka",
+      available_from: "2099-10-12",
+      mobilization_days: 3,
+      willing_to_travel: true,
+      minimum_engagement_days: 30,
+      rate_type: "NEGOTIATED",
+      minimum_rate: null,
+      maximum_rate: null,
+      currency: "INR",
+      categories: [id(100)],
+      skills: [id(300), id(301)],
+      items: [
+        {
+          worker_role_id: id(202),
+          quantity_available: 6,
+          minimum_experience_years: 3,
+          maximum_experience_years: 10,
+        },
+        {
+          worker_role_id: id(213),
+          quantity_available: 8,
+          minimum_experience_years: 0,
+          maximum_experience_years: 5,
+        },
+      ],
+      publish: true,
+    };
+    const manpower = await run(3, manpowerPayload);
+    const invitation = await run(1, {
+      op: "invite_vendor",
+      listing_id: manpower.id,
+      requirement_id: jobId,
+    });
     const app = {
       op: "submit",
       kind: "application",
@@ -118,6 +163,139 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
     };
     const applied = await run(4, app),
       proposed = await run(3, proposal);
+    await t.test(
+      "Vendor manpower listings enforce normalized validation and role authorization",
+      async () => {
+        const items = await pg.query<{ quantity_available: number }>(
+          "select quantity_available from public.vendor_manpower_listing_items where listing_id=$1 order by quantity_available",
+          [manpower.id],
+        );
+        assert.deepEqual(
+          items.rows.map((item) => item.quantity_available),
+          [6, 8],
+        );
+        await assert.rejects(run(4, manpowerPayload), /only vendors/i);
+        await assert.rejects(
+          run(3, {
+            ...manpowerPayload,
+            title: "Invalid quantity listing",
+            items: [{ ...manpowerPayload.items[0], quantity_available: 0 }],
+          }),
+          /quantity_available|check constraint/i,
+        );
+        await assert.rejects(
+          run(3, {
+            ...manpowerPayload,
+            title: "Invalid experience listing",
+            items: [
+              {
+                ...manpowerPayload.items[0],
+                minimum_experience_years: 8,
+                maximum_experience_years: 2,
+              },
+            ],
+          }),
+          /experience|check constraint/i,
+        );
+      },
+    );
+    await t.test(
+      "Listing ownership and status control marketplace visibility",
+      async () => {
+        await assert.rejects(
+          run(6, { op: "manpower_status", id: manpower.id, status: "PAUSED" }),
+          /access denied/i,
+        );
+        await run(3, {
+          op: "manpower_status",
+          id: manpower.id,
+          status: "PAUSED",
+        });
+        await pg.query("select set_config('request.jwt.claim.sub','',false)");
+        await pg.exec("set role anon");
+        try {
+          assert.equal(
+            (
+              await pg.query(
+                "select id from public.vendor_manpower_listings where id=$1",
+                [manpower.id],
+              )
+            ).rows.length,
+            0,
+          );
+        } finally {
+          await pg.exec("reset role");
+        }
+        await run(3, {
+          op: "manpower_status",
+          id: manpower.id,
+          status: "ACTIVE",
+        });
+        const duplicated = await run(3, {
+          op: "duplicate_manpower",
+          id: manpower.id,
+        });
+        assert.equal(
+          (
+            await pg.query<{ status: string }>(
+              "select status from public.vendor_manpower_listings where id=$1",
+              [duplicated.id],
+            )
+          ).rows[0].status,
+          "PAUSED",
+        );
+      },
+    );
+    await t.test(
+      "Company invitations enforce requirement ownership and prevent duplicates",
+      async () => {
+        await assert.rejects(
+          run(2, {
+            op: "invite_vendor",
+            listing_id: manpower.id,
+            requirement_id: jobId,
+          }),
+          /open vendor requirements/i,
+        );
+        await assert.rejects(
+          run(4, {
+            op: "invite_vendor",
+            listing_id: manpower.id,
+            requirement_id: jobId,
+          }),
+          /only companies/i,
+        );
+        await assert.rejects(
+          run(1, {
+            op: "invite_vendor",
+            listing_id: manpower.id,
+            requirement_id: jobId,
+          }),
+          /duplicate|unique/i,
+        );
+        await asUser(2, async () =>
+          assert.equal(
+            (
+              await pg.query(
+                "select id from public.vendor_requirement_invitations where id=$1",
+                [invitation.id],
+              )
+            ).rows.length,
+            0,
+          ),
+        );
+        const stored = await pg.query<{ status: string }>(
+          "select status from public.vendor_requirement_invitations where id=$1",
+          [invitation.id],
+        );
+        assert.equal(stored.rows[0].status, "PROPOSAL_SUBMITTED");
+        const notification = await pg.query<{ title: string }>(
+          "select title from public.notifications where user_id=$1 and title ilike '%invited requirement%' limit 1",
+          [id(1)],
+        );
+        assert.match(notification.rows[0].title, /invited requirement/i);
+      },
+    );
     await t.test(
       "Reject duplicate applications and role spoofing",
       async () => {
