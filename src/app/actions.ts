@@ -5,7 +5,13 @@ import { z } from "zod";
 import { db } from "@/lib/supabase/server";
 import { authErrorMessage } from "@/lib/supabase/config";
 import { currentUser } from "@/lib/data";
-import { jobSchema, submissionSchema } from "@/lib/domain";
+import {
+  invitationStatuses,
+  jobSchema,
+  manpowerListingSchema,
+  manpowerListingStatuses,
+  submissionSchema,
+} from "@/lib/domain";
 export type ActionResult = { error?: string; success?: string; id?: string };
 const profileSchema = z.object({
   roles: z.array(z.uuid()).max(30).default([]),
@@ -50,6 +56,24 @@ const commands: Record<string, z.ZodType> = {
   profile: profileSchema,
   create_job: jobSchema,
   submit: submissionSchema,
+  manpower_listing: manpowerListingSchema,
+  manpower_status: z.object({
+    id: z.uuid(),
+    status: z
+      .enum(manpowerListingStatuses)
+      .refine((status) => status !== "EXPIRED"),
+  }),
+  duplicate_manpower: z.object({ id: z.uuid() }),
+  invite_vendor: z.object({
+    listing_id: z.uuid(),
+    requirement_id: z.uuid(),
+  }),
+  invitation_status: z.object({
+    id: z.uuid(),
+    status: z
+      .enum(invitationStatuses)
+      .refine((status) => ["VIEWED", "DECLINED", "CANCELLED"].includes(status)),
+  }),
   job_status: z.object({
     id: z.uuid(),
     status: z.enum([
@@ -128,7 +152,9 @@ export async function command(
       return {
         error:
           error.code === "23505"
-            ? "This record already exists. Duplicate submissions and reviews are not allowed."
+            ? op === "invite_vendor"
+              ? "An active invitation already exists for this listing and requirement."
+              : "This record already exists. Duplicate submissions and reviews are not allowed."
             : error.message,
       };
     revalidatePath("/", "layout");

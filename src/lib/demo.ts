@@ -1,4 +1,4 @@
-import type { Job, Profile, Taxon } from "./domain";
+import type { Job, ManpowerListing, Profile, Taxon } from "./domain";
 export const id = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 export const categoryNames = [
@@ -137,6 +137,8 @@ export const profiles: Profile[] = [
     rating: 4.9,
     completed_count: 21,
     team_size: 28,
+    brands: "KONE, Otis, Schindler, Johnson Lifts",
+    travel: true,
     skills: [skills[0], skills[1], skills[19]],
   },
   {
@@ -186,6 +188,8 @@ export const profiles: Profile[] = [
     rating: 4.7,
     completed_count: 34,
     team_size: 42,
+    brands: "Mitsubishi Electric, Fujitec, Thyssenkrupp",
+    travel: true,
     skills: [skills[4], skills[5], skills[20]],
   },
 ];
@@ -281,3 +285,173 @@ export const demoJobs: Job[] = cities.map(([city, state], i) => ({
     { skills: skills[20] },
   ],
 }));
+
+const manpowerSeed: Array<{
+  id: number;
+  vendor: number;
+  title: string;
+  description: string;
+  city: string;
+  state: string;
+  available: string;
+  mobilization: number;
+  travel: boolean;
+  engagement: number;
+  rate: ManpowerListing["rate_type"];
+  min?: number;
+  max?: number;
+  roles: number[][];
+  categories: number[];
+  skills: number[];
+}> = [
+  {
+    id: 6000,
+    vendor: 2,
+    title: "Installation & Commissioning Team Available — Bengaluru",
+    description:
+      "Experienced traction elevator installation team available for residential and commercial projects, from mechanical erection through testing and commissioning.",
+    city: "Bengaluru",
+    state: "Karnataka",
+    available: "2026-10-12",
+    mobilization: 3,
+    travel: true,
+    engagement: 30,
+    rate: "NEGOTIATED" as const,
+    roles: [
+      [2, 6, 3, 9],
+      [13, 8, 0, 5],
+      [9, 2, 3, 10],
+      [16, 1, 6, 15],
+    ],
+    categories: [0, 1, 3, 5, 6],
+    skills: [0, 1, 2, 7, 9],
+  },
+  {
+    id: 6001,
+    vendor: 5,
+    title: "Maintenance Technicians Available — Hyderabad",
+    description:
+      "Mobile preventive and breakdown maintenance technicians with controller troubleshooting experience for multi-site service portfolios.",
+    city: "Hyderabad",
+    state: "Telangana",
+    available: "2026-10-15",
+    mobilization: 5,
+    travel: true,
+    engagement: 60,
+    rate: "DAY" as const,
+    min: 1600,
+    max: 2200,
+    roles: [
+      [3, 8, 3, 12],
+      [4, 4, 2, 8],
+      [15, 1, 7, 15],
+    ],
+    categories: [8, 9, 10],
+    skills: [4, 5, 6, 14, 15],
+  },
+  {
+    id: 6002,
+    vendor: 5,
+    title: "Modernization Team Available — Mumbai",
+    description:
+      "Modernization technicians and electrical specialists for controller upgrades, door systems and phased replacement work in occupied buildings.",
+    city: "Mumbai",
+    state: "Maharashtra",
+    available: "2026-10-20",
+    mobilization: 7,
+    travel: true,
+    engagement: 45,
+    rate: "PROJECT" as const,
+    min: 450000,
+    max: 800000,
+    roles: [
+      [5, 5, 5, 15],
+      [8, 3, 4, 12],
+      [13, 4, 1, 6],
+      [16, 1, 7, 18],
+    ],
+    categories: [11, 12, 18, 19],
+    skills: [3, 10, 14, 15],
+  },
+  {
+    id: 6003,
+    vendor: 2,
+    title: "Elevator Installation Crew — Pune",
+    description:
+      "Balanced installation crew for machine, guide rail and landing-door work with an experienced site supervisor and safety-trained helpers.",
+    city: "Pune",
+    state: "Maharashtra",
+    available: "2026-10-18",
+    mobilization: 4,
+    travel: true,
+    engagement: 30,
+    rate: "SHIFT" as const,
+    min: 1400,
+    max: 2400,
+    roles: [
+      [2, 5, 3, 10],
+      [13, 7, 0, 5],
+      [16, 1, 6, 15],
+    ],
+    categories: [0, 2, 18, 20],
+    skills: [0, 1, 9, 10, 11, 19],
+  },
+  {
+    id: 6004,
+    vendor: 5,
+    title: "Testing & Commissioning Engineers — Chennai",
+    description:
+      "Testing and commissioning engineers available for pre-handover checks, controller tuning, safety verification and client demonstrations.",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    available: "2026-10-10",
+    mobilization: 2,
+    travel: false,
+    engagement: 14,
+    rate: "MONTH" as const,
+    min: 52000,
+    max: 78000,
+    roles: [
+      [6, 3, 5, 15],
+      [7, 2, 5, 15],
+      [8, 2, 4, 12],
+    ],
+    categories: [5, 6, 7, 16],
+    skills: [2, 3, 4, 7, 14],
+  },
+];
+
+export const demoManpowerListings: ManpowerListing[] = manpowerSeed.map(
+  (listing, listingIndex) => ({
+    id: id(listing.id),
+    vendor_id: profiles[listing.vendor].id,
+    title: listing.title,
+    description: listing.description,
+    city: listing.city,
+    state: listing.state,
+    available_from: listing.available,
+    mobilization_days: listing.mobilization,
+    willing_to_travel: listing.travel,
+    minimum_engagement_days: listing.engagement,
+    rate_type: listing.rate,
+    minimum_rate: listing.min ?? null,
+    maximum_rate: listing.max ?? null,
+    currency: "INR",
+    status: "ACTIVE",
+    created_at: `2026-10-0${listingIndex + 1}T09:00:00Z`,
+    updated_at: `2026-10-0${listingIndex + 1}T09:00:00Z`,
+    profiles: profiles[listing.vendor],
+    items: listing.roles.map(
+      ([role, quantity, minimum, maximum], itemIndex) => ({
+        id: id(6100 + listingIndex * 10 + itemIndex),
+        worker_role_id: roles[role].id,
+        quantity_available: quantity,
+        minimum_experience_years: minimum,
+        maximum_experience_years: maximum,
+        worker_roles: roles[role],
+      }),
+    ),
+    categories: listing.categories.map((category) => categories[category]),
+    skills: listing.skills.map((skill) => skills[skill]),
+  }),
+);

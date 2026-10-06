@@ -1,0 +1,2 @@
+create index vendor_invitation_listing
+ on public.vendor_requirement_invitations(manpower_listing_id,status);
