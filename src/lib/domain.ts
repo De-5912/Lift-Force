@@ -42,6 +42,26 @@ export const rateBases = [
   "PROJECT",
   "NEGOTIATED",
 ] as const;
+export const manpowerRateTypes = [
+  "DAY",
+  "SHIFT",
+  "MONTH",
+  "PROJECT",
+  "NEGOTIATED",
+] as const;
+export const manpowerListingStatuses = [
+  "ACTIVE",
+  "PAUSED",
+  "UNAVAILABLE",
+  "EXPIRED",
+] as const;
+export const invitationStatuses = [
+  "PENDING",
+  "VIEWED",
+  "PROPOSAL_SUBMITTED",
+  "DECLINED",
+  "CANCELLED",
+] as const;
 export const label = (value: string) =>
   value
     .toLowerCase()
@@ -179,6 +199,88 @@ export const submissionSchema = z
     if (new Set(s.items.map((i) => i.job_role_id)).size !== s.items.length)
       ctx.addIssue({ code: "custom", message: "Do not repeat roles." });
   });
+const optionalAmount = z.preprocess(
+  (value) =>
+    value === "" || value === null || value === undefined
+      ? null
+      : Number(value),
+  z.number().min(0).max(100000000).nullable(),
+);
+const optionalExperience = z.preprocess(
+  (value) =>
+    value === "" || value === null || value === undefined
+      ? null
+      : Number(value),
+  z.number().min(0).max(60).nullable(),
+);
+export const manpowerListingItemSchema = z
+  .object({
+    worker_role_id: uuid,
+    quantity_available: z.coerce.number().int().min(1).max(1000),
+    minimum_experience_years: z.coerce.number().min(0).max(60),
+    maximum_experience_years: optionalExperience,
+  })
+  .superRefine((item, ctx) => {
+    if (
+      item.maximum_experience_years !== null &&
+      item.maximum_experience_years < item.minimum_experience_years
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Maximum experience must be at least the minimum experience.",
+      });
+  });
+export const manpowerListingSchema = z
+  .object({
+    id: uuid.optional(),
+    title: text.min(8).max(180),
+    description: text.min(30).max(5000),
+    city: text.min(2).max(100),
+    state: text.min(2).max(100),
+    available_from: z.iso.date(),
+    mobilization_days: z.coerce.number().int().min(0).max(365),
+    willing_to_travel: z.coerce.boolean(),
+    minimum_engagement_days: z.coerce.number().int().min(0).max(3650),
+    rate_type: z.enum(manpowerRateTypes),
+    minimum_rate: optionalAmount,
+    maximum_rate: optionalAmount,
+    currency: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{3}$/)
+      .default("INR"),
+    categories: z.array(uuid).max(30).default([]),
+    skills: z.array(uuid).max(30).default([]),
+    items: z.array(manpowerListingItemSchema).min(1).max(20),
+    publish: z.coerce.boolean().default(false),
+  })
+  .superRefine((listing, ctx) => {
+    if (
+      listing.maximum_rate !== null &&
+      listing.minimum_rate !== null &&
+      listing.maximum_rate < listing.minimum_rate
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Maximum rate must be at least the minimum rate.",
+      });
+    if (
+      listing.rate_type !== "NEGOTIATED" &&
+      (listing.minimum_rate === null || listing.maximum_rate === null)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter a minimum and maximum rate, or choose Negotiable.",
+      });
+    if (
+      new Set(listing.items.map((item) => item.worker_role_id)).size !==
+      listing.items.length
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Each manpower role should appear only once.",
+      });
+  });
 export type Taxon = { id: string; name: string };
 export type Profile = {
   supplied_roles?: Taxon[];
@@ -289,6 +391,114 @@ export type Submission = {
   }[];
   created_at: string;
   kind: "application" | "proposal";
+};
+export type ManpowerListingItem = {
+  id: string;
+  worker_role_id: string;
+  quantity_available: number;
+  minimum_experience_years: number;
+  maximum_experience_years: number | null;
+  worker_roles: Taxon;
+};
+export type ManpowerListing = {
+  id: string;
+  vendor_id: string;
+  title: string;
+  description: string;
+  city: string;
+  state: string;
+  available_from: string;
+  mobilization_days: number;
+  willing_to_travel: boolean;
+  minimum_engagement_days: number;
+  rate_type: (typeof manpowerRateTypes)[number];
+  minimum_rate: number | null;
+  maximum_rate: number | null;
+  currency: string;
+  status: (typeof manpowerListingStatuses)[number];
+  created_at: string;
+  updated_at: string;
+  profiles: Profile;
+  items: ManpowerListingItem[];
+  categories: Taxon[];
+  skills: Taxon[];
+};
+export type VendorInvitation = {
+  id: string;
+  company_id: string;
+  vendor_id: string;
+  manpower_listing_id: string;
+  requirement_id: string;
+  status: (typeof invitationStatuses)[number];
+  created_at: string;
+  responded_at: string | null;
+  jobs: Pick<Job, "id" | "title" | "owner_id" | "status" | "deadline">;
+  vendor_manpower_listings: Pick<ManpowerListing, "id" | "title" | "status">;
+  company: Pick<Profile, "id" | "name" | "verified">;
+  vendor: Pick<Profile, "id" | "name" | "verified">;
+};
+export type ManpowerFilters = {
+  keyword?: string;
+  city?: string;
+  state?: string;
+  role?: string;
+  category?: string;
+  skill?: string;
+  minimumQuantity?: number;
+  availableBy?: string;
+  willingToTravel?: boolean;
+  rateType?: string;
+  verified?: boolean;
+  sort?: "newest" | "availability" | "capacity";
+};
+export const totalManpower = (listing: ManpowerListing) =>
+  listing.items.reduce((total, item) => total + item.quantity_available, 0);
+export const filterManpowerListings = (
+  listings: ManpowerListing[],
+  filters: ManpowerFilters,
+) => {
+  const keyword = filters.keyword?.trim().toLowerCase() ?? "";
+  return listings
+    .filter(
+      (listing) =>
+        (!keyword ||
+          [
+            listing.title,
+            listing.description,
+            listing.city,
+            listing.state,
+            listing.profiles.name,
+            listing.profiles.brands ?? "",
+            ...listing.items.map((item) => item.worker_roles.name),
+            ...listing.categories.map((category) => category.name),
+            ...listing.skills.map((skill) => skill.name),
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(keyword)) &&
+        (!filters.city || listing.city === filters.city) &&
+        (!filters.state || listing.state === filters.state) &&
+        (!filters.role ||
+          listing.items.some((item) => item.worker_role_id === filters.role)) &&
+        (!filters.category ||
+          listing.categories.some((item) => item.id === filters.category)) &&
+        (!filters.skill ||
+          listing.skills.some((item) => item.id === filters.skill)) &&
+        (!filters.minimumQuantity ||
+          totalManpower(listing) >= filters.minimumQuantity) &&
+        (!filters.availableBy ||
+          listing.available_from <= filters.availableBy) &&
+        (!filters.willingToTravel || listing.willing_to_travel) &&
+        (!filters.rateType || listing.rate_type === filters.rateType) &&
+        (!filters.verified || listing.profiles.verified),
+    )
+    .sort((a, b) =>
+      filters.sort === "availability"
+        ? a.available_from.localeCompare(b.available_from)
+        : filters.sort === "capacity"
+          ? totalManpower(b) - totalManpower(a)
+          : b.created_at.localeCompare(a.created_at),
+    );
 };
 export const canAllocate = (
   capacity: number,
