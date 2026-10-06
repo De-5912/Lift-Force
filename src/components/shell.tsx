@@ -19,6 +19,7 @@ export async function Header() {
         </Link>
         <nav aria-label="Main navigation" className="desktop-nav">
           <Link href="/requirements">Find work</Link>
+          <Link href="/manpower">Browse manpower</Link>
           <Link href="/workers">Find workers</Link>
           <Link href="/vendors">Manpower vendors</Link>
           <Link href="/how-it-works">How it works</Link>
@@ -49,6 +50,7 @@ export async function Header() {
             </summary>
             <nav>
               <Link href="/requirements">Find work</Link>
+              <Link href="/manpower">Browse manpower</Link>
               <Link href="/workers">Find workers</Link>
               <Link href="/vendors">Manpower vendors</Link>
               <Link href="/how-it-works">How it works</Link>
@@ -83,6 +85,7 @@ export function Footer() {
         <Link href="/contact">Contact</Link>
         <Link href="/how-it-works">How it works</Link>
         <Link href="/requirements">Browse requirements</Link>
+        <Link href="/manpower">Browse manpower</Link>
       </nav>
       <small>Built for India’s elevator workforce.</small>
     </footer>
