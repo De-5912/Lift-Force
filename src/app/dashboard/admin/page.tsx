@@ -9,7 +9,7 @@ export default async function Admin() {
     command: { op: "admin_stats" },
   });
   if (countsError) throw new Error(countsError.message);
-  const [accounts, requests, reports, jobs, taxonomy, industries] =
+  const [accounts, requests, reports, jobs, manpower, taxonomy, industries] =
     await Promise.all([
       client.from("accounts").select("id,role,suspended,profiles(name)"),
       client
@@ -18,10 +18,15 @@ export default async function Admin() {
         .eq("status", "PENDING"),
       client.from("reports").select("*").eq("status", "OPEN"),
       client.from("jobs").select("id,title,status"),
+      client
+        .from("vendor_manpower_listings")
+        .select(
+          "id,title,status,vendor_id,profiles!vendor_manpower_listings_vendor_id_fkey(name)",
+        ),
       getTaxonomy(),
       client.from("industries").select("id,name"),
     ]);
-  for (const r of [accounts, requests, reports, jobs, industries])
+  for (const r of [accounts, requests, reports, jobs, manpower, industries])
     if (r.error) throw new Error(r.error.message);
   return (
     <>
@@ -43,6 +48,13 @@ export default async function Admin() {
         <Stat label="Completed requirements" value={counts.completed} />
         <Stat label="Applications" value={counts.applications} />
         <Stat label="Proposals" value={counts.proposals} />
+        <Stat
+          label="Active manpower listings"
+          value={
+            manpower.data?.filter((item) => item.status === "ACTIVE").length ??
+            0
+          }
+        />
       </div>
       <section className="panel">
         <h2>Verification requests</h2>
@@ -79,6 +91,42 @@ export default async function Admin() {
                 }}
                 label="Reject request"
               />
+            </div>
+          </article>
+        ))}
+      </section>
+      <section className="panel">
+        <h2>Available manpower moderation</h2>
+        {!manpower.data?.length && (
+          <p>No manpower listings have been published.</p>
+        )}
+        {manpower.data?.map((listing) => (
+          <article className="submission-card" key={listing.id}>
+            <div className="submission-top">
+              <div>
+                <h3>{listing.title}</h3>
+                <p>{(listing.profiles as unknown as { name: string }).name}</p>
+              </div>
+              <Badge>{listing.status}</Badge>
+            </div>
+            <div className="actions">
+              <a className="text-button" href={`/manpower/${listing.id}`}>
+                View listing
+              </a>
+              {listing.status === "ACTIVE" ? (
+                <CommandButton
+                  op="manpower_status"
+                  values={{ id: listing.id, status: "UNAVAILABLE" }}
+                  label="Mark unavailable"
+                  confirm="Remove this listing from the public marketplace?"
+                />
+              ) : (
+                <CommandButton
+                  op="manpower_status"
+                  values={{ id: listing.id, status: "ACTIVE" }}
+                  label="Reactivate"
+                />
+              )}
             </div>
           </article>
         ))}
