@@ -11,6 +11,8 @@ import {
   Bookmark,
   ShieldCheck,
   Truck,
+  Boxes,
+  Send,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/domain";
 export function DashboardNav({ role }: { role: AccountRole }) {
@@ -32,6 +34,27 @@ export function DashboardNav({ role }: { role: AccountRole }) {
             : "My applications",
       icon: Users,
     },
+    ...(role === "VENDOR"
+      ? [
+          {
+            href: "/dashboard/manpower",
+            label: "Manpower listings",
+            icon: Boxes,
+          },
+        ]
+      : role === "COMPANY"
+        ? [{ href: "/manpower", label: "Browse manpower", icon: Boxes }]
+        : []),
+    ...(["COMPANY", "VENDOR"].includes(role)
+      ? [
+          {
+            href: "/dashboard/invitations",
+            label:
+              role === "VENDOR" ? "Invitations received" : "Vendor invitations",
+            icon: Send,
+          },
+        ]
+      : []),
     { href: "/dashboard/deployments", label: "Deployments", icon: Truck },
     { href: "/dashboard/messages", label: "Messages", icon: MessagesSquare },
     { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
@@ -60,7 +83,9 @@ export function DashboardNav({ role }: { role: AccountRole }) {
       <small>{role} WORKSPACE</small>
       {items.map((i) => (
         <Link
-          className={path === i.href ? "active" : ""}
+          className={
+            path === i.href || path.startsWith(`${i.href}/`) ? "active" : ""
+          }
           href={i.href}
           key={i.href}
         >
