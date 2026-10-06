@@ -57,6 +57,11 @@ export async function Header() {
               <Link href={user ? "/dashboard" : "/sign-in"}>
                 {user ? "Dashboard" : "Sign in"}
               </Link>
+              {user && (
+                <form action={logout}>
+                  <button className="text-button">Sign out</button>
+                </form>
+              )}
             </nav>
           </details>
         </div>

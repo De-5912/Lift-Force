@@ -1274,7 +1274,7 @@ tbody tr:last-child td {
   .signin-link {
     display: none;
   }
-  .header-actions form {
+  .header-actions > form {
     display: none;
   }
   .demo-bar {

@@ -4,14 +4,15 @@ A project manpower marketplace for the elevator industry in India. Companies pub
 
 ## Current delivery status
 
-The application source, responsive public interface, authenticated workspaces, Supabase migrations, local-only seed data, and automated tests are complete. The configured hosted Supabase project contains both application migrations, 30 public tables, row-level security policies, the transactional `run_command` API, and the two expected Storage buckets.
+The application includes the October 2026 Available Manpower marketplace. The hosted Supabase project contains all four migrations, 35 public tables with row-level security, the transactional `run_command` API, and the two expected Storage buckets.
 
 Hosted browser verification covers registration, sign-in, sign-out, protected-route recovery, company/worker/vendor onboarding, requirement publishing, worker applications, vendor proposals, and company applicant review. The application also retains an explicitly labelled read-only preview when Supabase is not configured; preview pages never pretend to persist accounts or business records.
 
-Nothing has been deployed to Vercel. A production release still needs deployment-specific URLs, mail delivery, operational monitoring, backup policy, and a final staging acceptance pass.
+Production is hosted at [lift-force.vercel.app](https://lift-force.vercel.app) on Vercel, connected to `De-5912/Lift-Force` with `main` as the production branch. Supabase provides persistent data, authentication and Storage. Custom SMTP remains required for production email delivery; see `VERIFICATION.md` for deployment checks and limitations.
 
 ## Features implemented
 
+- Vendors publish multi-role Available Manpower listings, manage availability, and receive company invitations. Companies filter listings and invite vendors to their own open requirements; existing proposal, review, messaging and notification workflows take over.
 - Email/password registration, sign-in, confirmation callback, reset password and sign-out through Supabase Auth. Company, worker and vendor self-registration; trusted admin provisioning only.
 - Editable profiles, public photos/logos, manpower categories, industry skills, availability, rates, private company contact/GST fields and private document uploads. Employment, projects, certifications, training and education use structured history entries.
 - Database-managed elevator categories, manpower roles and skills, ready for additional industries.
@@ -55,7 +56,7 @@ All exposed tables have RLS. Clients have SELECT access under row-specific polic
 
 Role claims in mutable Auth user metadata are never used for ongoing authorization. Signup accepts a closed non-admin role allowlist once, then stores the role in `accounts`. Admin promotion requires trusted SQL.
 
-Next.js server actions add validation and their built-in origin/CSRF protection; the database independently enforces critical invariants against direct RPC calls. A per-user database command limit complements Supabase Auth limits. Uploads enforce a 5 MB limit, MIME allowlist and magic-byte checks. Buckets are private and authorized downloads use 60-second signed URLs. Uploads do not yet include a malware-scanning service.
+Next.js server actions add validation and their built-in origin/CSRF protection; the database independently enforces critical invariants against direct RPC calls. A per-user database command limit complements Supabase Auth limits. Uploads enforce a 5 MB limit, MIME allowlist and magic-byte checks. Profile images use public profile-media; documents remain private and authorized downloads use 60-second signed URLs. Uploads do not yet include a malware-scanning service.
 
 ## Development setup
 
@@ -164,7 +165,20 @@ The hosted development project has passed the central account and marketplace jo
 
 See `VERIFICATION.md` for the executed hosted, browser, database, and build checks.
 
-## Deployment to Vercel (not performed)
+## Deployment to Vercel
+
+The Next.js project uses Node 24, pnpm 11.19.0, and the committed lockfile. Vercel production variables are `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`; no service-role key is required. The canonical site URL is `https://lift-force.vercel.app`. GitHub Actions checks frozen installation, 22 tests, lint, TypeScript and the production build without hosted credentials.
+
+Migration order (never run the local seed against hosted data):
+
+- `20260926071705_workforce_core.sql`
+- `20260926090000_reference_catalog.sql`
+- `20261006141245_available_manpower_marketplace.sql`
+- `20261006143013_manpower_invitation_listing_index.sql`
+
+The connected hosted project already contains these exact migration contents, recorded under connector-generated timestamps. Confirm email is enabled. Production confirmation and reset callbacks are allowlisted alongside localhost/127.0.0.1 development callbacks.
+
+For another deployment:
 
 1. Create an isolated production Supabase project and apply the migration after review. Do **not** apply `seed.sql`. Review database/security advisors.
 2. Provision an initial administrator through a trusted database session after registering a normal account: update `accounts.role` and `profiles.kind` together to `ADMIN` for that exact user UUID. Do not add a public promotion API.
