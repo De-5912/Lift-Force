@@ -2,13 +2,31 @@
 
 A project manpower marketplace for the elevator industry in India. Companies publish multi-role requirements; individual professionals apply for one role; vendors quote for a complete or partial team. Selection allocates manpower, followed by deployment confirmation, completion and mutual reviews.
 
-## Current delivery status
+## Live deployment
 
-The application includes the October 2026 Available Manpower marketplace. The hosted Supabase project contains all four migrations, 35 public tables with row-level security, the transactional `run_command` API, and the two expected Storage buckets.
+- **Production URL:** [lift-force.vercel.app](https://lift-force.vercel.app)
+- **Hosting:** Vercel running Next.js, with hosted Supabase for PostgreSQL, Auth and Storage.
+- **Production branch:** `main` in `De-5912/Lift-Force`.
+- **CI:** GitHub Actions.
+- **Status:** deployed and usable; production application verification is complete, including the October 2026 Available Manpower marketplace.
+- **Remaining readiness item:** custom SMTP. Supabase still uses its restricted built-in email sender. Confirmation/reset email delivery for arbitrary public users is not yet considered production-ready; configure custom SMTP before relying on public registration at scale.
+- **Custom domain:** optional; none has been chosen.
 
-Hosted browser verification covers registration, sign-in, sign-out, protected-route recovery, company/worker/vendor onboarding, requirement publishing, worker applications, vendor proposals, and company applicant review. The application also retains an explicitly labelled read-only preview when Supabase is not configured; preview pages never pretend to persist accounts or business records.
+The hosted backend has all four migrations, 35 public tables with RLS enabled, and `public.run_command(jsonb)` for transactional workflow operations. Storage uses public `profile-media` for profile images and private `documents` for authorized downloads. Confirm Email is enabled; the Auth Site URL is `https://lift-force.vercel.app`, with production confirmation/reset callbacks configured and localhost/127.0.0.1 development callbacks preserved.
 
-Production is hosted at [lift-force.vercel.app](https://lift-force.vercel.app) on Vercel, connected to `De-5912/Lift-Force` with `main` as the production branch. Supabase provides persistent data, authentication and Storage. Custom SMTP remains required for production email delivery; see `VERIFICATION.md` for deployment checks and limitations.
+All production checks passed locally and in GitHub Actions:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm test                     # 22 tests
+pnpm lint
+pnpm typecheck
+pnpm build
+```
+
+The web application uses only `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`; no Supabase service-role key is used. See [VERIFICATION.md](VERIFICATION.md) for the executed checks and email-delivery limitation.
+
+Development retains an explicitly labelled read-only preview when Supabase is not configured; preview pages never pretend to persist accounts or business records. Earlier hosted development checks covered company/worker/vendor registration and onboarding, worker applications, vendor proposals and company applicant review. Current production workflow checks used administrator-provisioned disposable accounts with email confirmation enabled; they do not establish public confirmation/reset email delivery.
 
 ## Features implemented
 
@@ -26,6 +44,17 @@ Production is hosted at [lift-force.vercel.app](https://lift-force.vercel.app) o
 - Manual verification, reports, account suspension, listing deactivation and taxonomy administration.
 - Mobile navigation, collapsible phone filters, loading/empty/error states and labelled forms.
 
+### Available Manpower marketplace
+
+Available Manpower adds supply-side discovery alongside company-posted requirements. A listing advertises a vendor's team capacity, rather than one individual employee, and can contain multiple worker roles and quantities.
+
+1. **Vendor:** creates a listing, describes availability and capabilities, manages listing status (including pause/reactivation), and receives invitations from companies.
+2. **Company:** browses and filters available manpower, opens a vendor's listing, and invites the vendor to an existing open requirement owned by that company.
+3. **Vendor:** receives the invitation/notification, reviews the requirement, and submits through the existing vendor proposal workflow.
+4. **Company:** reviews, shortlists and accepts the proposal through the existing application flow.
+
+Browse listings at `/manpower`; vendors manage their listings at `/dashboard/manpower`, and both sides track invitations at `/dashboard/invitations`. Listings reuse the existing roles, categories, skills, vendor profiles, notifications and participant-scoped messaging. There is no separate quotation or messaging system.
+
 ## Architecture
 
 ```text
@@ -42,11 +71,11 @@ tests/                   Validation and PostgreSQL authorization/workflow tests
 artifacts/               Browser screenshots
 ```
 
-Next.js 16 App Router, React, strict TypeScript, Tailwind CSS and accessible semantic controls. Supabase provides PostgreSQL, Auth and private Storage. Dependencies are pinned in `package.json`, with a pnpm lockfile. PGlite is used only in automated SQL tests; it is not an application database or an auth replacement.
+Next.js 16 App Router, React, strict TypeScript, Tailwind CSS and accessible semantic controls. Hosted Supabase provides PostgreSQL, Auth and Storage with public profile images and private documents. Dependencies are pinned in `package.json`, with a pnpm lockfile. PGlite is used only in automated SQL tests; it is not an application database or an auth replacement.
 
 ### Database model
 
-Public profiles are separated from authorization accounts and private organization data. Requirements contain relational manpower and skill lines. Applications and proposals are separate tables; proposal items represent each offered role. Deployments and deployment items record allocations. Conversations, participants, messages, notifications, verification requests, reviews, reports, attachments and bookmarks have separate tables.
+Public profiles are separated from authorization accounts and private organization data. Requirements contain relational manpower and skill lines. Available Manpower listings contain normalized role/quantity items and category/skill relations; invitations link a company, vendor, listing and existing requirement. Applications and proposals are separate tables; proposal items represent each offered role. Deployments and deployment items record allocations. Conversations, participants, messages, notifications, verification requests, reviews, reports, attachments and bookmarks have separate tables.
 
 UUID primary/foreign keys, restrictive deletion for engagement history, enums for stable lifecycle states, editable taxonomy tables, check constraints and indexes enforce data structure. Core domain names are industry-neutral.
 
@@ -149,16 +178,28 @@ pnpm test:browser        # Public browser smoke checks against 127.0.0.1:3000
 pnpm format              # Format maintained application files
 ```
 
-The SQL suite supplies minimal Auth/Storage schema fixtures and executes the actual migration. It tests selection rollback, role spoofing, duplicate submissions/reviews, company IDOR, private addresses/messages, verification, reports and suspension. It does not substitute for testing the Supabase services themselves or true multi-session concurrency.
+The automated suite currently has 22 tests. SQL tests supply minimal Auth/Storage schema fixtures and execute the actual workflow migrations. Coverage includes manpower listing validation, quantities, filtering, ownership/status visibility, requirement ownership, invitations/duplicate prevention, selection rollback, role spoofing, duplicate submissions/reviews, company IDOR, private addresses/messages, verification, reports and suspension. It does not substitute for testing the Supabase services themselves or true multi-session concurrency.
 
 ## Signed-in acceptance coverage
 
-The hosted development project has passed the central account and marketplace journeys. Repeat the following checks in an isolated staging environment before each production release:
+Live production verification successfully covered:
+
+- Public pages and desktop/mobile rendering.
+- Company requirement creation.
+- Vendor multi-role manpower listing creation and listing pause/reactivation.
+- Marketplace filtering and company invitation to an existing requirement.
+- Vendor notification and normal proposal submission.
+- Company proposal review and shortlist.
+- Sign-out and subsequent sign-in, including protected-route recovery.
+
+The mobile sign-out issue discovered during verification was fixed. Disposable production verification accounts and data were removed after testing; pre-existing hosted data was preserved. Proposal acceptance remains part of the existing application workflow and automated database coverage; the live verification above ended at shortlist. Real confirmation/reset email delivery remains subject to the SMTP limitation.
+
+For future releases, use the following broader regression checklist in an isolated staging environment:
 
 1. Register each account type; confirm email, reset a password and verify logout/protected routes.
 2. Company: complete profile → publish multi-role requirement → receive worker and partial vendor responses → compare → shortlist → message → select → verify filled counts → confirm deployments → complete → review.
 3. Worker: profile and skills → filter work → apply → upload resume linked to the requirement → track status → receive messages → deployment → completion → review company.
-4. Vendor: profile → partial manpower quantities and rate → negotiation → acceptance → deployment → completion → review.
+4. Vendor: profile → publish/manage available manpower → receive company invitation → submit a normal proposal with partial manpower quantities and rate → negotiation → acceptance → deployment → completion → review.
 5. Admin: login → inspect verification documents → approve/reject → review report → suspend account/deactivate listing → edit taxonomy.
 6. With a second company, attempt to access private submissions/documents/messages through changed URLs and direct RPC requests; verify denial. Test file downloads and expiry, not only upload UI.
 7. Repeat main forms on a phone and keyboard, including error recovery. Test simultaneous selections from two separate database sessions.
@@ -169,18 +210,27 @@ See `VERIFICATION.md` for the executed hosted, browser, database, and build chec
 
 The Next.js project uses Node 24, pnpm 11.19.0, and the committed lockfile. Vercel production variables are `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `NEXT_PUBLIC_SITE_URL`; no service-role key is required. The canonical site URL is `https://lift-force.vercel.app`. GitHub Actions checks frozen installation, 22 tests, lint, TypeScript and the production build without hosted credentials.
 
-Migration order (never run the local seed against hosted data):
+All four migrations are applied in the current hosted project. Migration order for a new environment (never run the local seed against hosted data):
 
-- `20260926071705_workforce_core.sql`
-- `20260926090000_reference_catalog.sql`
-- `20261006141245_available_manpower_marketplace.sql`
-- `20261006143013_manpower_invitation_listing_index.sql`
+1. `20260926071705_workforce_core.sql`
+2. `20260926090000_reference_catalog.sql`
+3. `20261006141245_available_manpower_marketplace.sql`
+4. `20261006143013_manpower_invitation_listing_index.sql`
 
-The connected hosted project already contains these exact migration contents, recorded under connector-generated timestamps. Confirm email is enabled. Production confirmation and reset callbacks are allowlisted alongside localhost/127.0.0.1 development callbacks.
+The connected hosted project contains these exact migration contents, recorded under connector-generated timestamps. Confirm Email is enabled. The Auth Site URL is `https://lift-force.vercel.app`; these production callbacks are allowlisted alongside localhost/127.0.0.1 development callbacks:
+
+- `https://lift-force.vercel.app/auth/callback`
+- `https://lift-force.vercel.app/auth/callback?next=/reset-password`
+
+### Remaining email setup
+
+Custom SMTP is not complete. Supabase's restricted built-in sender is still in use, and confirmation/reset delivery for arbitrary public users is not yet production-ready. Configure a transactional SMTP provider with a verified sender before relying on public registration at scale. Required settings are SMTP host, port, username, password/API credential, sender email and sender display name; domain verification requires the provider's exact DNS records. Keep credentials out of source control and verify real confirmation/reset emails after configuration.
+
+A custom application domain is optional and has not been chosen. If one is added, update `NEXT_PUBLIC_SITE_URL`, the Supabase Auth Site URL and callback allowlist together.
 
 For another deployment:
 
-1. Create an isolated production Supabase project and apply the migration after review. Do **not** apply `seed.sql`. Review database/security advisors.
+1. Create an isolated Supabase project and apply the migrations in order after review. Do **not** apply `seed.sql`. Review database/security advisors.
 2. Provision an initial administrator through a trusted database session after registering a normal account: update `accounts.role` and `profiles.kind` together to `ADMIN` for that exact user UUID. Do not add a public promotion API.
 3. Configure Supabase email delivery, confirmation, password reset redirects, abuse controls and production site URL. Keep the documents bucket private.
 4. Import the repository into Vercel as a Next.js project. Set the three environment variables above for the chosen environment, with the production site URL. Build with `pnpm build`.
@@ -191,4 +241,4 @@ For another deployment:
 
 The supplied code covers the central P0 workflow and the main P1 operations. Certifications are supplied and reviewed manually; closest-match sorting uses shared skills and city, never an automatic hiring decision. Disputes use the report/moderation workflow; a dedicated dispute-resolution case system remains future work. Contact support is explicitly unconfigured; no invented email address is shown. Automatic email/SMS/WhatsApp delivery beyond Supabase authentication is not enabled.
 
-Payments, attendance, contracts, invoices, payroll, escrow, GPS, mobile apps and external WhatsApp/SMS delivery remain P2, as requested. Business records are persistent only after Supabase is configured.
+Payments, attendance, contracts, invoices, payroll, escrow, GPS, mobile apps and external WhatsApp/SMS delivery remain P2, as requested. The deployed application persists business records in hosted Supabase; the unconfigured local preview remains read-only.
