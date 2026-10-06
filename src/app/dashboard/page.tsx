@@ -1,15 +1,28 @@
 import Link from "next/link";
-import { requireUser, getJobs, getSubmissions } from "@/lib/data";
+import {
+  requireUser,
+  getJobs,
+  getManpowerListings,
+  getSubmissions,
+  getVendorInvitations,
+} from "@/lib/data";
 import { db } from "@/lib/supabase/server";
 import { PageTitle, Stat, Empty, Badge } from "@/components/ui";
-import { label } from "@/lib/domain";
+import { label, totalManpower } from "@/lib/domain";
 export default async function Dashboard() {
   const user = await requireUser();
-  const [jobs, submissions, client] = await Promise.all([
-    getJobs(user.role === "COMPANY"),
-    getSubmissions(),
-    db(),
-  ]);
+  const [jobs, submissions, client, manpowerListings, invitations] =
+    await Promise.all([
+      getJobs(user.role === "COMPANY"),
+      getSubmissions(),
+      db(),
+      user.role === "VENDOR"
+        ? getManpowerListings({ owned: true })
+        : Promise.resolve([]),
+      ["COMPANY", "VENDOR"].includes(user.role)
+        ? getVendorInvitations()
+        : Promise.resolve([]),
+    ]);
   const { data: profile, error } = await client
     .from("profiles")
     .select(
@@ -51,7 +64,9 @@ export default async function Dashboard() {
         description={
           user.role === "COMPANY"
             ? "Your project teams, applications and deployments at a glance."
-            : "Keep your profile current and follow your project opportunities."
+            : user.role === "VENDOR"
+              ? "Manage your available manpower, invitations, proposals and deployments."
+              : "Keep your profile current and follow your project opportunities."
         }
       >
         <Link
@@ -59,12 +74,16 @@ export default async function Dashboard() {
           href={
             user.role === "COMPANY"
               ? "/dashboard/requirements/new"
-              : "/requirements"
+              : user.role === "VENDOR"
+                ? "/dashboard/manpower/new"
+                : "/requirements"
           }
         >
           {user.role === "COMPANY"
             ? "+ Post manpower requirement"
-            : "Browse requirements ↗"}
+            : user.role === "VENDOR"
+              ? "+ List available manpower"
+              : "Browse requirements ↗"}
         </Link>
       </PageTitle>
       {(!profile.bio || !profile.city) && (
@@ -80,9 +99,16 @@ export default async function Dashboard() {
           label={
             user.role === "COMPANY"
               ? "Active requirements"
-              : "Open requirements"
+              : user.role === "VENDOR"
+                ? "Active manpower listings"
+                : "Open requirements"
           }
-          value={jobs.filter((j) => j.status === "OPEN").length}
+          value={
+            user.role === "VENDOR"
+              ? manpowerListings.filter((item) => item.status === "ACTIVE")
+                  .length
+              : jobs.filter((j) => j.status === "OPEN").length
+          }
         />
         <Stat
           label="Individual applications"
@@ -130,13 +156,21 @@ export default async function Dashboard() {
         <Stat
           label={
             user.role === "VENDOR"
-              ? "Available manpower"
-              : "Completed engagements"
+              ? "Listed available manpower"
+              : user.role === "COMPANY"
+                ? "Pending vendor invitations"
+                : "Completed engagements"
           }
           value={
             user.role === "VENDOR"
-              ? profile.team_size
-              : deployments.filter((d) => d.status === "COMPLETED").length
+              ? manpowerListings
+                  .filter((item) => item.status === "ACTIVE")
+                  .reduce((total, item) => total + totalManpower(item), 0)
+              : user.role === "COMPANY"
+                ? invitations.filter((item) =>
+                    ["PENDING", "VIEWED"].includes(item.status),
+                  ).length
+                : deployments.filter((d) => d.status === "COMPLETED").length
           }
         />
       </div>

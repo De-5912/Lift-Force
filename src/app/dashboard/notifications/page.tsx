@@ -16,7 +16,7 @@ export default async function Notifications() {
     <>
       <PageTitle
         title="Notifications"
-        description="Updates on your applications, proposals and project conversations."
+        description="Updates on applications, proposals, manpower invitations and project conversations."
       >
         <CommandButton
           op="read_notifications"
