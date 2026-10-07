@@ -10,18 +10,12 @@ const run = (...args) =>
 const origin = "http://127.0.0.1:3000";
 run("set", "viewport", "1440", "1000");
 run("open", `${origin}/requirements`);
-const snapshot = run("snapshot", "-i");
-const city = snapshot.match(/combobox "City"[^\n]*ref=([^\]]+)\]/)[1];
-run("select", `@${city}`, "Bengaluru");
-assert.match(run("get", "text", "body"), /1 open requirements/);
-run("find", "label", "Search requirements", "fill", "no-such-project");
-assert.match(run("get", "text", "body"), /No open requirements match/);
-run("find", "role", "button", "click", "--name", "Clear filters");
-assert.match(run("get", "text", "body"), /6 open requirements/);
+assert.match(run("get", "url"), /sign-in/);
 const routes = [
   "/",
   "/requirements",
   "/requirements/00000000-0000-4000-8000-000000001000",
+  "/manpower",
   "/workers",
   "/vendors",
   "/profiles/00000000-0000-4000-8000-000000000004",
@@ -57,6 +51,6 @@ run("set", "viewport", "1440", "1000");
 run("open", origin);
 run("screenshot", "artifacts/home-desktop.png", "--full");
 console.log(
-  "PASS: city filter, no-results state, clearing filters, protected redirect, and 12 routes at 390/768/1440px.",
+  "PASS: anonymous requirement protection and public route rendering at 390/768/1440px.",
 );
 console.log("Browser errors:", run("errors"));
