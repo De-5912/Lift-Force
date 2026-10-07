@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { ArrowUpRight, ShieldCheck, MapPin, MoveVertical } from "lucide-react";
-import { getJobs } from "@/lib/data";
+import { getJobs, currentUser } from "@/lib/data";
 import { JobCard } from "@/components/job-card";
 export default async function Home() {
-  const jobs = await getJobs();
+  const user = await currentUser();
+  const canBrowse = !!user && user.role !== "COMPANY";
+  const jobs = canBrowse ? await getJobs() : [];
+  const discoveryHref =
+    user?.role === "COMPANY"
+      ? "/manpower"
+      : user
+        ? "/requirements"
+        : "/sign-in";
   return (
     <>
       <section className="container hero">
@@ -20,8 +28,13 @@ export default async function Home() {
             team here.
           </p>
           <div className="actions">
-            <Link href="/requirements" className="button">
-              Find elevator work <ArrowUpRight size={17} />
+            <Link href={discoveryHref} className="button">
+              {user?.role === "COMPANY"
+                ? "Browse available manpower"
+                : user
+                  ? "Find elevator work"
+                  : "Sign in to find work"}{" "}
+              <ArrowUpRight size={17} />
             </Link>
             <Link href="/register?role=COMPANY" className="button secondary">
               Post a requirement
@@ -81,10 +94,26 @@ export default async function Home() {
         <div className="section-heading">
           <div>
             <p className="eyebrow">YOUR NEXT PROJECT STARTS HERE</p>
-            <h2>Open manpower requirements</h2>
-            <p>Real project needs. Clear scope. The details that matter.</p>
+            <h2>
+              {user?.role === "COMPANY"
+                ? "Find your manpower team"
+                : "Open manpower requirements"}
+            </h2>
+            <p>
+              {canBrowse
+                ? "Real project needs. Clear scope. The details that matter."
+                : user
+                  ? "Discover available vendor teams for your requirements."
+                  : "Sign in as a worker or vendor to explore project opportunities."}
+            </p>
           </div>
-          <Link href="/requirements">Browse all requirements ↗</Link>
+          <Link href={discoveryHref}>
+            {user?.role === "COMPANY"
+              ? "Browse manpower ↗"
+              : canBrowse
+                ? "Browse all requirements ↗"
+                : "Sign in to find work ↗"}
+          </Link>
         </div>
         <div className="job-grid">
           {jobs.slice(0, 3).map((job) => (
