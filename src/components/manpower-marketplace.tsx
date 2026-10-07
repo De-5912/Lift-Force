@@ -9,6 +9,7 @@ import {
   type ManpowerListing,
   type Taxon,
 } from "@/lib/domain";
+import { locationOptions } from "@/lib/locations";
 import { Empty, Field } from "./ui";
 import { ManpowerCard } from "./manpower-card";
 
@@ -34,7 +35,7 @@ export function ManpowerMarketplace({
   const [sort, setSort] = useState<"newest" | "availability" | "capacity">(
     "newest",
   );
-  const unique = (values: string[]) => [...new Set(values)].sort();
+  const locations = locationOptions(listings, state);
   const filtered = filterManpowerListings(listings, {
     keyword,
     city,
@@ -97,24 +98,23 @@ export function ManpowerMarketplace({
                 onChange={(event) => setCity(event.target.value)}
               >
                 <option value="">All cities</option>
-                {unique(listings.map((listing) => listing.city)).map(
-                  (value) => (
-                    <option key={value}>{value}</option>
-                  ),
-                )}
+                {locations.cities.map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
               </select>
             </Field>
             <Field label="State">
               <select
                 value={state}
-                onChange={(event) => setState(event.target.value)}
+                onChange={(event) => {
+                  setState(event.target.value);
+                  setCity("");
+                }}
               >
                 <option value="">All states</option>
-                {unique(listings.map((listing) => listing.state)).map(
-                  (value) => (
-                    <option key={value}>{value}</option>
-                  ),
-                )}
+                {locations.states.map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
               </select>
             </Field>
             <Field label="Worker role">

@@ -1,7 +1,15 @@
 "use client";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import type { Job, Profile, Taxon } from "@/lib/domain";
+import {
+  label,
+  rateBases,
+  type Job,
+  type Profile,
+  type Taxon,
+} from "@/lib/domain";
+import { locationOptions } from "@/lib/locations";
+import { durationRanges, matchesDuration } from "@/lib/duration";
 import { JobCard } from "./job-card";
 import { Empty, Field } from "./ui";
 export function Marketplace({
@@ -56,7 +64,7 @@ export function Marketplace({
           j.job_roles.some((r) => r.min_experience <= Number(experience))) &&
         (!budget || j.max_rate >= Number(budget)) &&
         (!start || j.start_date >= start) &&
-        (!duration || j.duration === duration) &&
+        matchesDuration(j, duration) &&
         (!basis || j.rate_basis === basis),
     )
     .sort((a, b) =>
@@ -72,7 +80,7 @@ export function Marketplace({
                 ? a.created_at.localeCompare(b.created_at)
                 : b.created_at.localeCompare(a.created_at),
     );
-  const unique = (values: string[]) => [...new Set(values)].sort();
+  const locations = locationOptions(jobs, state);
   return (
     <>
       <div className="search-bar">
@@ -105,7 +113,7 @@ export function Marketplace({
             <Field label="City">
               <select value={city} onChange={(e) => setCity(e.target.value)}>
                 <option value="">All cities</option>
-                {unique(jobs.map((j) => j.city)).map((v) => (
+                {locations.cities.map((v) => (
                   <option key={v}>{v}</option>
                 ))}
               </select>
@@ -124,9 +132,15 @@ export function Marketplace({
               </select>
             </Field>
             <Field label="State">
-              <select value={state} onChange={(e) => setState(e.target.value)}>
+              <select
+                value={state}
+                onChange={(e) => {
+                  setState(e.target.value);
+                  setCity("");
+                }}
+              >
                 <option value="">All states</option>
-                {unique(jobs.map((j) => j.state)).map((s) => (
+                {locations.states.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </select>
@@ -189,16 +203,20 @@ export function Marketplace({
                 onChange={(e) => setDuration(e.target.value)}
               >
                 <option value="">Any duration</option>
-                {unique(jobs.map((j) => j.duration)).map((d) => (
-                  <option key={d}>{d}</option>
+                {durationRanges.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
                 ))}
               </select>
             </Field>
             <Field label="Rate basis">
               <select value={basis} onChange={(e) => setBasis(e.target.value)}>
                 <option value="">Any basis</option>
-                {unique(jobs.map((j) => j.rate_basis)).map((d) => (
-                  <option key={d}>{d}</option>
+                {rateBases.map((d) => (
+                  <option key={d} value={d}>
+                    {label(d)}
+                  </option>
                 ))}
               </select>
             </Field>

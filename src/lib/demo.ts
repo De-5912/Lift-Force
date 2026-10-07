@@ -1,3 +1,4 @@
+import { platformLocations } from "./locations";
 import type { Job, ManpowerListing, Profile, Taxon } from "./domain";
 export const id = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -193,14 +194,6 @@ export const profiles: Profile[] = [
     skills: [skills[4], skills[5], skills[20]],
   },
 ];
-const cities = [
-  ["Bengaluru", "Karnataka"],
-  ["Mumbai", "Maharashtra"],
-  ["Pune", "Maharashtra"],
-  ["Hyderabad", "Telangana"],
-  ["Chennai", "Tamil Nadu"],
-  ["Delhi NCR", "Delhi"],
-];
 const titles = [
   "Installation manpower — Whitefield residential towers",
   "Testing & commissioning — commercial lift project",
@@ -209,7 +202,7 @@ const titles = [
   "Escalator installation — retail development",
   "Breakdown support — commercial office campus",
 ];
-export const demoJobs: Job[] = cities.map(([city, state], i) => ({
+export const demoJobs: Job[] = platformLocations.map(({ city, state }, i) => ({
   id: id(1000 + i),
   owner_id: profiles[i % 2].id,
   title: titles[i],
