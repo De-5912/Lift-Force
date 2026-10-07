@@ -18,7 +18,11 @@ export async function Header() {
           liftwork<span className="brand-period">.</span>
         </Link>
         <nav aria-label="Main navigation" className="desktop-nav">
-          <Link href="/requirements">Find work</Link>
+          {user?.role !== "COMPANY" && (
+            <Link href={user ? "/requirements" : "/sign-in"}>
+              {user ? "Find work" : "Sign in to find work"}
+            </Link>
+          )}
           <Link href="/manpower">Browse manpower</Link>
           <Link href="/workers">Find workers</Link>
           <Link href="/vendors">Manpower vendors</Link>
@@ -49,7 +53,11 @@ export async function Header() {
               <Menu />
             </summary>
             <nav>
-              <Link href="/requirements">Find work</Link>
+              {user?.role !== "COMPANY" && (
+                <Link href={user ? "/requirements" : "/sign-in"}>
+                  {user ? "Find work" : "Sign in to find work"}
+                </Link>
+              )}
               <Link href="/manpower">Browse manpower</Link>
               <Link href="/workers">Find workers</Link>
               <Link href="/vendors">Manpower vendors</Link>
@@ -75,7 +83,8 @@ export async function Header() {
     </>
   );
 }
-export function Footer() {
+export async function Footer() {
+  const user = await currentUser();
   return (
     <footer className="footer">
       <div>
@@ -89,7 +98,21 @@ export function Footer() {
         <Link href="/about">About</Link>
         <Link href="/contact">Contact</Link>
         <Link href="/how-it-works">How it works</Link>
-        <Link href="/requirements">Browse requirements</Link>
+        <Link
+          href={
+            user?.role === "COMPANY"
+              ? "/dashboard/requirements"
+              : user
+                ? "/requirements"
+                : "/sign-in"
+          }
+        >
+          {user?.role === "COMPANY"
+            ? "My requirements"
+            : user
+              ? "Browse requirements"
+              : "Sign in to find work"}
+        </Link>
         <Link href="/manpower">Browse manpower</Link>
       </nav>
       <small>Built for India’s elevator workforce.</small>
