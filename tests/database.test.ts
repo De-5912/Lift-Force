@@ -21,7 +21,8 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
         (file) =>
           file.endsWith("_workforce_core.sql") ||
           file.endsWith("_available_manpower_marketplace.sql") ||
-          file.endsWith("_manpower_invitation_listing_index.sql"),
+          file.endsWith("_manpower_invitation_listing_index.sql") ||
+          file.endsWith("_requirement_role_isolation.sql"),
       )
       .sort();
     for (const file of migrations)
