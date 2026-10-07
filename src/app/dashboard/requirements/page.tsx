@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { getJobs, requireUser } from "@/lib/data";
+import { getOwnedJobs, requireUser } from "@/lib/data";
 import { PageTitle, Badge, Empty } from "@/components/ui";
 import { label } from "@/lib/domain";
 import { CommandButton } from "@/components/action-form";
 export default async function MyJobs() {
   await requireUser("COMPANY");
-  const jobs = await getJobs(true);
+  const jobs = await getOwnedJobs();
   return (
     <>
       <PageTitle

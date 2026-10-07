@@ -1,4 +1,4 @@
-import { requireUser, getJob } from "@/lib/data";
+import { requireUser, getVisibleJob } from "@/lib/data";
 import { db } from "@/lib/supabase/server";
 import { PageTitle, Empty } from "@/components/ui";
 import { JobCard } from "@/components/job-card";
@@ -8,9 +8,9 @@ export default async function Saved() {
   const client = await db();
   const { data, error } = await client.from("saved_jobs").select("job_id");
   if (error) throw new Error(error.message);
-  const jobs = (await Promise.all(data.map((r) => getJob(r.job_id)))).filter(
-    (j) => j !== null,
-  );
+  const jobs = (
+    await Promise.all(data.map((r) => getVisibleJob(r.job_id)))
+  ).filter((j) => j !== null);
   return (
     <>
       <PageTitle

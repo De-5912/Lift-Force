@@ -3,7 +3,6 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { db, configured } from "./supabase/server";
 import {
-  demoJobs,
   demoManpowerListings,
   profiles,
   categories,
@@ -44,29 +43,42 @@ export async function requireUser(role?: AccountRole) {
 }
 const jobSelect =
   "*,profiles!jobs_owner_id_fkey(*),categories(*),job_roles(*,worker_roles(*)),job_skills(skills(*))";
-export async function getJobs(owned = false): Promise<Job[]> {
-  if (!configured()) return owned ? [] : demoJobs;
-  const client = await db();
-  let query = client.from("jobs").select(jobSelect);
-  if (owned) {
-    const user = await requireUser();
-    query = query.eq("owner_id", user.id);
-  } else
-    query = query
-      .eq("status", "OPEN")
-      .gte("deadline", new Date().toISOString().slice(0, 10));
-  const { data, error } = await query.order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data as unknown as Job[];
+export async function requireMarketplaceUser() {
+  const user = await requireUser();
+  if (user.role === "COMPANY") redirect("/dashboard/requirements");
+  return user;
 }
-export async function getJob(id: string): Promise<Job | null> {
-  if (!configured()) return demoJobs.find((j) => j.id === id) ?? null;
+export async function getMarketplaceJobs(): Promise<Job[]> {
+  const user = await currentUser();
+  if (!user || user.role === "COMPANY") return [];
   const client = await db();
   const { data, error } = await client
     .from("jobs")
     .select(jobSelect)
-    .eq("id", id)
-    .maybeSingle();
+    .eq("status", "OPEN")
+    .gte("deadline", new Date().toISOString().slice(0, 10))
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data as unknown as Job[];
+}
+export async function getOwnedJobs(): Promise<Job[]> {
+  const user = await requireUser("COMPANY");
+  const client = await db();
+  const { data, error } = await client
+    .from("jobs")
+    .select(jobSelect)
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data as unknown as Job[];
+}
+export async function getVisibleJob(id: string): Promise<Job | null> {
+  const user = await requireUser();
+  const client = await db();
+  let query = client.from("jobs").select(jobSelect).eq("id", id);
+  if (user.role === "COMPANY") query = query.eq("owner_id", user.id);
+  // RLS handles open/deadline visibility, submission history, and admin access.
+  const { data, error } = await query.maybeSingle();
   if (error) throw new Error(error.message);
   return data as unknown as Job | null;
 }
@@ -186,9 +198,11 @@ export async function getVendorInvitations(): Promise<VendorInvitation[]> {
   const { data, error } = await client
     .from("vendor_requirement_invitations")
     .select(
-      "*,jobs!vendor_requirement_invitations_requirement_id_fkey(id,title,owner_id,status,deadline),vendor_manpower_listings!vendor_requirement_invitations_manpower_listing_id_fkey(id,title,status),company:profiles!vendor_requirement_invitations_company_id_fkey(id,name,verified),vendor:profiles!vendor_requirement_invitations_vendor_id_fkey(id,name,verified)",
+      "*,jobs!vendor_requirement_invitations_requirement_id_fkey!inner(id,title,owner_id,status,deadline),vendor_manpower_listings!vendor_requirement_invitations_manpower_listing_id_fkey(id,title,status),company:profiles!vendor_requirement_invitations_company_id_fkey(id,name,verified),vendor:profiles!vendor_requirement_invitations_vendor_id_fkey(id,name,verified)",
     )
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return data as unknown as VendorInvitation[];
 }
+
+export const getJobs = getMarketplaceJobs;
