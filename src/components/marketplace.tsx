@@ -1,14 +1,16 @@
 "use client";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import type { Job, Profile } from "@/lib/domain";
+import type { Job, Profile, Taxon } from "@/lib/domain";
 import { JobCard } from "./job-card";
 import { Empty, Field } from "./ui";
 export function Marketplace({
   jobs,
+  taxonomy,
   profile,
 }: {
   jobs: Job[];
+  taxonomy: { roles: Taxon[]; categories: Taxon[] };
   profile?: Profile;
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -114,11 +116,7 @@ export function Marketplace({
                 onChange={(e) => setCategory(e.target.value)}
               >
                 <option value="">All work categories</option>
-                {[
-                  ...new Map(
-                    jobs.map((j) => [j.category_id, j.categories]),
-                  ).values(),
-                ].map((v) => (
+                {taxonomy.categories.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
                   </option>
@@ -136,15 +134,7 @@ export function Marketplace({
             <Field label="Worker role">
               <select value={role} onChange={(e) => setRole(e.target.value)}>
                 <option value="">Any role</option>
-                {[
-                  ...new Map(
-                    jobs.flatMap((j) =>
-                      j.job_roles.map(
-                        (r) => [r.role_id, r.worker_roles] as const,
-                      ),
-                    ),
-                  ).values(),
-                ].map((r) => (
+                {taxonomy.roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}
                   </option>
