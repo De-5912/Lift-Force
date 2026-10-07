@@ -164,6 +164,35 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
     };
     const applied = await run(4, app),
       proposed = await run(3, proposal);
+    await t.test("Requirement RLS isolates anonymous and competing companies including roles and skills", async () => {
+      const other = await run(2, {...base, title:"Company B confidential installation"});
+      for (const [table, column] of [["jobs","id"],["job_roles","job_id"],["job_skills","job_id"]]) {
+        await pg.query("select set_config('request.jwt.claim.sub','',false)");
+        await pg.exec("set role anon");
+        try { assert.equal((await pg.query(`select * from public.${table}`)).rows.length,0); }
+        finally { await pg.exec("reset role"); }
+        await asUser(1, async () => {
+          assert.ok((await pg.query(`select * from public.${table} where ${column}=$1`,[jobId])).rows.length>0);
+          assert.equal((await pg.query(`select * from public.${table} where ${column}=$1`,[other.id])).rows.length,0);
+        });
+        for (const actor of [3,4,9]) await asUser(actor,async()=>assert.ok((await pg.query(`select * from public.${table} where ${column}=$1`,[other.id])).rows.length>0));
+      }
+      await asUser(1,async()=>assert.equal((await pg.query("select j.id,r.quantity,s.skill_id from public.jobs j join public.job_roles r on r.job_id=j.id join public.job_skills s on s.job_id=j.id where j.id=$1",[other.id])).rows.length,0));
+      await assert.rejects(run(1,{op:"job_status",id:other.id,status:"CLOSED"}),/owner|own|denied|company/i);
+      await asUser(1,async()=> {
+        assert.ok((await pg.query("select id from public.vendor_manpower_listings where id=$1",[manpower.id])).rows.length);
+        assert.equal((await pg.query("select id from public.profiles where kind in ('WORKER','VENDOR')")).rows.length,5);
+      });
+    });
+    await t.test("Submission history survives closure while unrelated users and expired discovery are denied", async () => {
+      await run(1,{op:"job_status",id:jobId,status:"PAUSED"});
+      for (const actor of [1,3,4,9]) await asUser(actor,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[jobId])).rows.length,1));
+      for (const actor of [2,5,6]) await asUser(actor,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[jobId])).rows.length,0));
+      await run(1,{op:"job_status",id:jobId,status:"OPEN"});
+      const expired=await run(1,{...base,title:"Expired private requirement",deadline:"2020-01-01"});
+      for (const actor of [3,4]) await asUser(actor,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[expired.id])).rows.length,0));
+      await asUser(9,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[expired.id])).rows.length,1));
+    });
     await t.test(
       "Vendor manpower listings enforce normalized validation and role authorization",
       async () => {
