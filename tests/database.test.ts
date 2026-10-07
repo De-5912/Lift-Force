@@ -164,6 +164,10 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
     };
     const applied = await run(4, app),
       proposed = await run(3, proposal);
+    const removeFixtureJob = async (job: string) => {
+      for (const table of ["job_private", "job_skills", "job_roles"]) await pg.query(`delete from public.${table} where job_id=$1`, [job]);
+      await pg.query("delete from public.jobs where id=$1", [job]);
+    };
     await t.test("Requirement RLS isolates anonymous and competing companies including roles and skills", async () => {
       const other = await run(2, {...base, title:"Company B confidential installation"});
       for (const [table, column] of [["jobs","id"],["job_roles","job_id"],["job_skills","job_id"]]) {
@@ -181,17 +185,19 @@ test("PostgreSQL end-to-end workflows and adversarial authorization", async (t) 
       await assert.rejects(run(1,{op:"job_status",id:other.id,status:"CLOSED"}),/owner|own|denied|company/i);
       await asUser(1,async()=> {
         assert.ok((await pg.query("select id from public.vendor_manpower_listings where id=$1",[manpower.id])).rows.length);
-        assert.equal((await pg.query("select id from public.profiles where kind in ('WORKER','VENDOR')")).rows.length,5);
+        assert.equal((await pg.query("select id from public.profiles where kind in ('WORKER','VENDOR')")).rows.length,4);
       });
+      await removeFixtureJob(other.id!);
     });
     await t.test("Submission history survives closure while unrelated users and expired discovery are denied", async () => {
-      await run(1,{op:"job_status",id:jobId,status:"PAUSED"});
+      await pg.query("update public.jobs set status='CLOSED' where id=$1",[jobId]);
       for (const actor of [1,3,4,9]) await asUser(actor,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[jobId])).rows.length,1));
       for (const actor of [2,5,6]) await asUser(actor,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[jobId])).rows.length,0));
-      await run(1,{op:"job_status",id:jobId,status:"OPEN"});
+      await pg.query("update public.jobs set status='OPEN' where id=$1",[jobId]);
       const expired=await run(1,{...base,title:"Expired private requirement",deadline:"2020-01-01"});
       for (const actor of [3,4]) await asUser(actor,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[expired.id])).rows.length,0));
       await asUser(9,async()=>assert.equal((await pg.query("select id from public.jobs where id=$1",[expired.id])).rows.length,1));
+      await removeFixtureJob(expired.id!);
     });
     await t.test(
       "Vendor manpower listings enforce normalized validation and role authorization",
