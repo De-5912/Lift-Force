@@ -1,7 +1,8 @@
 import Link from "next/link";
 import {
   requireUser,
-  getJobs,
+  getMarketplaceJobs,
+  getOwnedJobs,
   getManpowerListings,
   getSubmissions,
   getVendorInvitations,
@@ -13,7 +14,7 @@ export default async function Dashboard() {
   const user = await requireUser();
   const [jobs, submissions, client, manpowerListings, invitations] =
     await Promise.all([
-      getJobs(user.role === "COMPANY"),
+      user.role === "COMPANY" ? getOwnedJobs() : getMarketplaceJobs(),
       getSubmissions(),
       db(),
       user.role === "VENDOR"

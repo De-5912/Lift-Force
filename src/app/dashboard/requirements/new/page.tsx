@@ -1,4 +1,4 @@
-import { getTaxonomy, requireUser, getJob } from "@/lib/data";
+import { getTaxonomy, requireUser, getVisibleJob } from "@/lib/data";
 import { PageTitle } from "@/components/ui";
 import { JobForm } from "@/components/job-form";
 export default async function NewJob({
@@ -8,7 +8,7 @@ export default async function NewJob({
 }) {
   const user = await requireUser("COMPANY");
   const { duplicate } = await searchParams;
-  const source = duplicate ? await getJob(duplicate) : null;
+  const source = duplicate ? await getVisibleJob(duplicate) : null;
   return (
     <>
       <PageTitle

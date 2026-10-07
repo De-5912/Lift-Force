@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MapPin, CalendarDays, Users, Clock } from "lucide-react";
-import { currentUser, getJob } from "@/lib/data";
+import { requireUser, getVisibleJob } from "@/lib/data";
 import { money, date, label } from "@/lib/domain";
 import { Badge, Verified, Field } from "@/components/ui";
 import { ActionForm, CommandButton } from "@/components/action-form";
@@ -11,7 +11,8 @@ export default async function Detail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [job, user] = await Promise.all([getJob(id), currentUser()]);
+  const user = await requireUser();
+  const job = await getVisibleJob(id);
   if (!job) notFound();
   const open =
     job.status === "OPEN" &&
@@ -19,7 +20,15 @@ export default async function Detail({
   return (
     <div className="container section">
       <div className="breadcrumbs">
-        <Link href="/requirements">Requirements</Link>
+        <Link
+          href={
+            user.role === "COMPANY"
+              ? "/dashboard/requirements"
+              : "/requirements"
+          }
+        >
+          Requirements
+        </Link>
         <span>/</span>
         <span>{job.city}</span>
       </div>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CalendarDays, Clock, MapPin, Plane, Users } from "lucide-react";
 import {
   currentUser,
-  getJobs,
+  getOwnedJobs,
   getManpowerListing,
   getVendorInvitations,
 } from "@/lib/data";
@@ -27,7 +27,7 @@ export default async function ManpowerDetail({
   if (!listing) notFound();
   const [requirements, invitations] =
     user?.role === "COMPANY"
-      ? await Promise.all([getJobs(true), getVendorInvitations()])
+      ? await Promise.all([getOwnedJobs(), getVendorInvitations()])
       : [[], []];
   const openRequirements = requirements.filter(
     (job) =>

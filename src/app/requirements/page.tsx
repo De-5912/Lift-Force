@@ -1,11 +1,16 @@
-import { getJobs, currentUser, getProfiles, getTaxonomy } from "@/lib/data";
+import {
+  getMarketplaceJobs,
+  requireMarketplaceUser,
+  getProfiles,
+  getTaxonomy,
+} from "@/lib/data";
 import { PageTitle } from "@/components/ui";
 import { Marketplace } from "@/components/marketplace";
 export const metadata = { title: "Browse requirements" };
 export default async function Requirements() {
-  const [user, jobs, taxonomy] = await Promise.all([
-    currentUser(),
-    getJobs(),
+  const user = await requireMarketplaceUser();
+  const [jobs, taxonomy] = await Promise.all([
+    getMarketplaceJobs(),
     getTaxonomy(),
   ]);
   const profile = user

@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
-import { getJob, requireUser } from "@/lib/data";
+import { notFound, redirect } from "next/navigation";
+import { getVisibleJob, requireUser } from "@/lib/data";
 import { PageTitle, Empty } from "@/components/ui";
 import { SubmissionForm } from "@/components/submission-form";
 export default async function Apply({
@@ -8,14 +8,16 @@ export default async function Apply({
   params: Promise<{ id: string }>;
 }) {
   const user = await requireUser();
+  if (user.role !== "WORKER" && user.role !== "VENDOR") redirect("/dashboard");
   const { id } = await params;
-  const job = await getJob(id);
+  const job = await getVisibleJob(id);
   if (!job) notFound();
   if (
     (user.role !== "WORKER" && user.role !== "VENDOR") ||
     (user.role === "WORKER" && !job.individuals) ||
     (user.role === "VENDOR" && !job.vendors) ||
-    job.status !== "OPEN"
+    job.status !== "OPEN" ||
+    job.deadline < new Date().toISOString().slice(0, 10)
   )
     return (
       <Empty
