@@ -1,9 +1,13 @@
-import { getJobs, currentUser, getProfiles } from "@/lib/data";
+import { getJobs, currentUser, getProfiles, getTaxonomy } from "@/lib/data";
 import { PageTitle } from "@/components/ui";
 import { Marketplace } from "@/components/marketplace";
 export const metadata = { title: "Browse requirements" };
 export default async function Requirements() {
-  const user = await currentUser();
+  const [user, jobs, taxonomy] = await Promise.all([
+    currentUser(),
+    getJobs(),
+    getTaxonomy(),
+  ]);
   const profile = user
     ? (await getProfiles()).find((p) => p.id === user.id)
     : undefined;
@@ -14,7 +18,7 @@ export default async function Requirements() {
         title="Find your next project"
         description="Installation, maintenance, commissioning and more. Find work that fits your skills."
       />
-      <Marketplace jobs={await getJobs()} profile={profile} />
+      <Marketplace jobs={jobs} profile={profile} taxonomy={taxonomy} />
     </div>
   );
 }

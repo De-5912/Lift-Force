@@ -7,14 +7,17 @@ import {
   label,
   manpowerRateTypes,
   type ManpowerListing,
+  type Taxon,
 } from "@/lib/domain";
 import { Empty, Field } from "./ui";
 import { ManpowerCard } from "./manpower-card";
 
 export function ManpowerMarketplace({
   listings,
+  taxonomy,
 }: {
   listings: ManpowerListing[];
+  taxonomy: { roles: Taxon[]; categories: Taxon[]; skills: Taxon[] };
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
@@ -32,29 +35,6 @@ export function ManpowerMarketplace({
     "newest",
   );
   const unique = (values: string[]) => [...new Set(values)].sort();
-  const roles = [
-    ...new Map(
-      listings.flatMap((listing) =>
-        listing.items.map(
-          (item) => [item.worker_role_id, item.worker_roles] as const,
-        ),
-      ),
-    ).values(),
-  ];
-  const categories = [
-    ...new Map(
-      listings.flatMap((listing) =>
-        listing.categories.map((item) => [item.id, item] as const),
-      ),
-    ).values(),
-  ];
-  const skills = [
-    ...new Map(
-      listings.flatMap((listing) =>
-        listing.skills.map((item) => [item.id, item] as const),
-      ),
-    ).values(),
-  ];
   const filtered = filterManpowerListings(listings, {
     keyword,
     city,
@@ -143,7 +123,7 @@ export function ManpowerMarketplace({
                 onChange={(event) => setRole(event.target.value)}
               >
                 <option value="">Any role</option>
-                {roles.map((item) => (
+                {taxonomy.roles.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
@@ -156,7 +136,7 @@ export function ManpowerMarketplace({
                 onChange={(event) => setCategory(event.target.value)}
               >
                 <option value="">Any category</option>
-                {categories.map((item) => (
+                {taxonomy.categories.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
@@ -169,7 +149,7 @@ export function ManpowerMarketplace({
                 onChange={(event) => setSkill(event.target.value)}
               >
                 <option value="">Any skill</option>
-                {skills.map((item) => (
+                {taxonomy.skills.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
